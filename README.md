@@ -42,10 +42,44 @@ pm2 stop blog           # 停止
 pm2 delete blog         # 删除进程
 ```
 
+## ⚙️ 个性化配置
+
+博客的所有可定制项都集中在 `config.json` 中。首次部署时：
+
+```bash
+# 复制示例配置
+cp config.example.json config.json
+
+# 编辑配置
+nano config.json
+```
+
+### 配置段说明
+
+| 段 | 用途 |
+|---|---|
+| `site` | 站点名称、描述、图号前缀、阅读速度 |
+| `author` | 署名、项目名、版本号 |
+| `blueprint` | 蓝图前缀、所有 UI 标签文本 |
+| `admin` | 管理后台标题、按钮文案、表单标签 |
+| `api` | API 文档页面标题、基础 URL |
+| `footer` | 公网安备/ICP 备案号及链接 |
+| `errors` | 404 等错误页面的文案 |
+| `server` | 端口、内外网 URL |
+| `database` | 数据库路径、保存超时 |
+| `auth` | 默认用户名、密码策略、bcrypt 轮数 |
+| `session` | 会话过期时间、cookie 安全选项 |
+| `upload` | 上传目录、大小限制、允许的文件类型 |
+| `import` | Obsidian 笔记目录、callout 图标映射 |
+| `features` | 蓝图风格、DOMPurify 等开关 |
+| `pagination` | 文章列表默认每页数量 |
+
+> **注意**: `config.json` 已加入 `.gitignore`，不会被提交到仓库。`config.example.json` 是模板文件，包含所有默认值。
+
 ## 🔐 管理员凭证
 
-- **用户名**: `admin`
-- **密码**: 首次启动时自动生成随机密码，请登录后立即修改
+- **用户名**: 由 `config.json` → `auth.defaultUsername` 决定（默认 `admin`）
+- **密码**: 首次启动时自动生成随机密码，格式为 `{密码前缀}-{随机6字节hex}`，请登录后立即修改
 
 ## 📝 Obsidian 导入功能
 
@@ -123,6 +157,10 @@ const greeting = "Hello, Obsidian!";
 fts-blog/
 ├── server.js                  # Express 主入口
 ├── package.json                # 依赖配置
+├── config.json                 # 个性化配置（不提交到仓库）
+├── config.example.json         # 配置模板
+├── config/
+│   └── loader.js               # 配置加载器
 ├── database/
 │   ├── init.js                 # SQLite 初始化
 │   └── seed.js                 # 示例文章
@@ -146,7 +184,11 @@ fts-blog/
 │   ├── admin-import.ejs        # Obsidian 导入
 │   ├── admin-login.ejs         # 登录页
 │   ├── admin-preview.ejs       # 预览页
-│   └── 404.ejs                  # 404 页面
+│   ├── api-info.ejs             # API 文档
+│   ├── 404.ejs                  # 404 页面
+│   └── partials/
+│       ├── header.ejs           # 头部模板
+│       └── footer.ejs           # 底部模板
 ├── uploads/                    # 图片上传目录
 ├── data/                       # SQLite 数据库
 ├── 经验/                        # Obsidian 笔记源目录
