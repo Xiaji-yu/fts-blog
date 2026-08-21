@@ -69,7 +69,7 @@
       <td><%= new Date(post.created_at).toLocaleDateString('zh-CN') %></td>
       <td>
         <a href="/admin/edit/<%= post.id %>" class="btn btn-outline btn-sm">编辑</a>
-        <button type="button" class="btn btn-danger btn-sm" onclick="deletePost(<%= post.id %>, <%- JSON.stringify(post.title) %>)">删除</button>
+        <button type="button" class="btn btn-danger btn-sm" data-delete-id="<%= post.id %>" data-delete-title="<%= post.title.replace(/"/g, '&quot;') %>">删除</button>
       </td>
     </tr>
     <% }) %>
@@ -164,19 +164,22 @@ document.getElementById('password-modal')?.addEventListener('click', function(e)
   if (e.target === this) closePasswordModal();
 });
 
-async function deletePost(id, title) {
-  if (!confirm(`确定删除「${title}」？\n\n此操作不可撤销。\n\nDelete "${title}"?\n\nThis action cannot be undone.`)) {
+// Delete post via event delegation (avoids inline JS escaping issues)
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('button[data-delete-id]');
+  if (!btn) return;
+
+  const id = btn.getAttribute('data-delete-id');
+  const title = btn.getAttribute('data-delete-title');
+
+  if (!confirm('确定删除「' + title + '」？\n\n此操作不可撤销。\n\nDelete "' + title + '"?\n\nThis action cannot be undone.')) {
     return;
   }
 
-  try {
-    const response = await fetch(`/api/posts/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
+  fetch('/api/posts/' + id, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' }
+  }).then(response => {
     if (response.ok) {
       alert('✓ 删除成功 · Post deleted');
       window.location.href = '/admin';
@@ -184,13 +187,14 @@ async function deletePost(id, title) {
       alert('✗ 未授权，请重新登录 · Unauthorized');
       window.location.href = '/admin/login';
     } else {
-      const data = await response.json();
-      alert(`✗ 删除失败 · Delete failed: ${data.error || 'Unknown error'}`);
+      response.json().then(data => {
+        alert('✗ 删除失败 · Delete failed: ' + (data.error || 'Unknown error'));
+      });
     }
-  } catch (err) {
-    alert(`✗ 网络错误 · Network error: ${err.message}`);
-  }
-}
+  }).catch(err => {
+    alert('✗ 网络错误 · Network error: ' + err.message);
+  });
+});
 </script>
 
 <%- include('partials/footer') %>
