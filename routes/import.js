@@ -119,6 +119,13 @@ router.post('/import/directory', requireAuthView, async (req, res) => {
     const imported = [];
     const failed = [];
 
+    // Build slug -> id map for internal wiki links
+    const slugMapResult = db.exec("SELECT slug, id FROM posts WHERE slug IS NOT NULL AND slug != ''");
+    const slugToIdMap = {};
+    for (const row of slugMapResult[0]?.values || []) {
+      slugToIdMap[row[0]] = row[1];
+    }
+
     for (const filename of files) {
       try {
         // Path traversal protection: strip directory components and verify
@@ -152,7 +159,7 @@ router.post('/import/directory', requireAuthView, async (req, res) => {
         const excerptMatch = markdownContent.match(/^(.+?)(?:\n\n|$)/s);
         const excerpt = excerptMatch ? excerptMatch[1].substring(0, 200) : '';
 
-        const convertedContent = convertObsidianSyntax(markdownContent);
+        const convertedContent = convertObsidianSyntax(markdownContent, slugToIdMap);
 
         // Skip if post with this slug already exists (idempotent re-import)
         const existing = db.exec("SELECT id FROM posts WHERE slug = ?", [slug]);
@@ -222,6 +229,13 @@ router.post('/import', requireAuthView, async (req, res) => {
     const imported = [];
     const failed = [];
 
+    // Build slug -> id map for internal wiki links
+    const slugMapResult = db.exec("SELECT slug, id FROM posts WHERE slug IS NOT NULL AND slug != ''");
+    const slugToIdMap = {};
+    for (const row of slugMapResult[0]?.values || []) {
+      slugToIdMap[row[0]] = row[1];
+    }
+
     for (const file of files) {
       try {
         const { filename, content, frontmatter } = file;
@@ -247,7 +261,7 @@ router.post('/import', requireAuthView, async (req, res) => {
         const excerpt = excerptMatch ? excerptMatch[1].substring(0, 200) : '';
 
         // Convert Obsidian-specific syntax
-        const convertedContent = convertObsidianSyntax(markdownContent);
+        const convertedContent = convertObsidianSyntax(markdownContent, slugToIdMap);
 
         // Insert post
         db.run(
@@ -337,7 +351,8 @@ function parseFrontmatter(content) {
 }
 
 // Helper: Convert Obsidian-specific syntax to standard Markdown
-function convertObsidianSyntax(content) {
+// slugToIdMap: optional map of slug -> post id for internal wiki links
+function convertObsidianSyntax(content, slugToIdMap = {}) {
   const lines = content.split('\n');
   const result = [];
   let inCallout = false;
@@ -407,6 +422,10 @@ function convertObsidianSyntax(content) {
     processed = processed.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, link, alias) => {
       const text = alias || link;
       const slug = link.toLowerCase().replace(/[^a-z0-9一-龥]+/g, '-').replace(/^-+|-+$/g, '');
+      const postId = slugToIdMap[slug];
+      if (postId) {
+        return `[${text}](/post/${postId})`;
+      }
       return `[${text}](/post/${slug})`;
     });
 

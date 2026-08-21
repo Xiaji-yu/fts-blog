@@ -59,7 +59,7 @@ pm2 delete blog         # 删除进程
 ### 支持的 Obsidian 语法
 
 - ✅ YAML frontmatter (title, date, tags 等)
-- ✅ Wiki 链接 `[[Link]]` → `[Link](/post/slug)`
+- ✅ Wiki 链接 `[[Link]]` → `[Link](/post/:id)`
 - ✅ 图片嵌入 `![[image.png]]`
 - ✅ Callout 语法 `> [!note]` → 引用块
 - ✅ 标签自动提取

@@ -64,13 +64,13 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /post/:slug - Single post page
-router.get('/post/:slug', async (req, res) => {
+// GET /post/:id - Single post page
+router.get('/post/:id', async (req, res) => {
   try {
     const db = await getDb();
     const result = db.exec(
-      "SELECT * FROM posts WHERE slug = ? AND published = 1",
-      [req.params.slug]
+      "SELECT * FROM posts WHERE id = ? AND published = 1",
+      [req.params.id]
     );
 
     if (result.length === 0 || result[0].values.length === 0) {

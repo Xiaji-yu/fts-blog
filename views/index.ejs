@@ -38,7 +38,7 @@
 <% } else { %>
 <div class="post-grid">
   <% posts.forEach(post => { %>
-  <article class="card" ondblclick="window.location.href='/post/<%= post.slug %>'">
+  <article class="card" ondblclick="window.location.href='/post/<%= post.id %>'">
     <div class="card-header">
       <div>
         <h3 class="card-title">
@@ -65,7 +65,7 @@
         <% }) %>
       </div>
       <% } %>
-      <a href="/post/<%= post.slug %>" class="card-link">READ →</a>
+      <a href="/post/<%= post.id %>" class="card-link">READ →</a>
     </div>
   </article>
   <% }) %>
