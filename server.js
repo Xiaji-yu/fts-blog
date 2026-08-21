@@ -3,16 +3,21 @@ const session = require('express-session');
 const methodOverride = require('method-override');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const initSqlJs = require('sql.js');
 const { initDatabase } = require('./database/init');
 const apiRoutes = require('./routes/api');
 const adminRoutes = require('./routes/admin');
 const publicRoutes = require('./routes/public');
 const importRoutes = require('./routes/import');
+const config = require('./config/loader');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || config.server.port;
 const DB_PATH = path.join(__dirname, 'data', 'blog.db');
+
+app.locals.config = config;
+app.locals.bp = config.blueprint;
 
 // Ensure data directory exists
 const dataDir = path.join(__dirname, 'data');
@@ -137,7 +142,6 @@ try {
 app.locals.marked = sanitizedMarked;
 
 // Session configuration
-const crypto = require('crypto');
 app.use(session({
   secret: process.env.SESSION_SECRET || crypto.randomBytes(64).toString('hex'),
   resave: false,
@@ -146,7 +150,7 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: config.session.maxAgeHours * 60 * 60 * 1000
   }
 }));
 
@@ -163,7 +167,7 @@ app.use('/', publicRoutes);
 // 404 handler
 app.use((req, res) => {
   res.status(404).render('404', {
-    title: '404 - Not Found',
+    title: config.errors['404'].title,
     blueprint: true,
     nMark: true
   });
@@ -173,14 +177,14 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`
 ╔═══════════════════════════════════════════╗
-║  FTS-BLOG · Frontend Test Suite - Blog    ║
+║  ${config.author.project}    ║
 ║  Engineering Blueprint Aesthetic          ║
 ╠═══════════════════════════════════════════╣
-║  Server running on http://localhost:${PORT}   ║
+║  Server running on ${config.server.publicUrl}   ║
 ║                                           ║
-║  Public:   http://localhost:${PORT}          ║
-║  Admin:    http://localhost:${PORT}/admin     ║
-║  API:      http://localhost:${PORT}/api       ║
+║  Public:   ${config.server.publicUrl}          ║
+║  Admin:    ${config.server.adminUrl}     ║
+║  API:      ${config.server.apiUrl}       ║
 ╚═══════════════════════════════════════════╝
   `);
 });

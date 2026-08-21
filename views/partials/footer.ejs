@@ -2,14 +2,14 @@
 
   <footer class="footer-block">
     <div class="container">
-      <span class="field">设计/绘制</span> 夏祭<br>
-      <span class="field">工程</span> Frontend Test Suite · FTS-BLOG v1.0<br>
-      <span class="field">备案</span>
-      <a href="http://www.beian.gov.cn/" target="_blank" rel="noopener">
-        <img src="/icon/备案图标.png" alt="公网安备" class="beian-icon">沪公网安备31011202022181号
+      <span class="field">设计/绘制</span> <%= config.site.author %><br>
+      <span class="field">工程</span> <%= config.author.project %> <%= config.author.version %><br>
+      <span class="field"><%= config.blueprint.labels.registration %></span>
+      <a href="<%= config.footer.beianUrl %>" target="_blank" rel="noopener">
+        <img src="/icon/备案图标.png" alt="公网安备" class="beian-icon"><%= config.footer.beianNumber %>
       </a>
       &nbsp;&middot;&nbsp;
-      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">沪ICP备2026007186号</a>
+      <a href="<%= config.footer.icpUrl %>" target="_blank" rel="noopener"><%= config.footer.icpNumber %></a>
     </div>
   </footer>
 </body>

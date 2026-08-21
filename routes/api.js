@@ -5,10 +5,11 @@ const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const config = require('../config/loader');
 const { requireAuth } = require('../middleware/auth');
 
 const DB_PATH = path.join(__dirname, '..', 'data', 'blog.db');
-const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
+const UPLOAD_DIR = path.join(__dirname, '..', config.upload.directory);
 
 // Ensure upload directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {
@@ -26,18 +27,19 @@ const storage = multer.diskStorage({
   }
 });
 
+const allowedTypesRegex = new RegExp(config.upload.allowedTypes.join('|'));
+
 const upload = multer({
   storage: storage,
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    const extname = allowedTypesRegex.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypesRegex.test(file.mimetype);
     if (extname && mimetype) {
       return cb(null, true);
     }
     cb(new Error('Only image files are allowed'));
   },
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: config.upload.maxFileSizeMB * 1024 * 1024 }
 });
 
 // Helper to get database connection
@@ -54,7 +56,7 @@ async function getDb() {
 const saveDbQueue = [];
 let saveDbProcessing = false;
 
-function withTimeout(promise, ms = 30000) {
+function withTimeout(promise, ms = config.database.saveTimeoutMs) {
   let timeoutId;
   const timeoutPromise = new Promise((_, reject) => {
     timeoutId = setTimeout(() => {
@@ -79,7 +81,7 @@ async function processSaveDbQueue() {
   try {
     const data = db.export();
     const buffer = Buffer.from(data);
-    await withTimeout(fs.promises.writeFile(DB_PATH, buffer), 30000);
+    await withTimeout(fs.promises.writeFile(DB_PATH, buffer), config.database.saveTimeoutMs);
     db.close();
     resolve();
   } catch (err) {
@@ -147,7 +149,7 @@ router.get('/posts', async (req, res) => {
   try {
     const db = await getDb();
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const limit = parseInt(req.query.limit) || config.pagination.defaultLimit;
     const offset = (page - 1) * limit;
 
     const result = db.exec(
@@ -453,7 +455,7 @@ router.put('/auth/password', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Current password and new password are required' });
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < (config.auth.minPasswordLength || 6)) {
       return res.status(400).json({ error: 'New password must be at least 6 characters' });
     }
 
@@ -473,7 +475,7 @@ router.put('/auth/password', requireAuth, async (req, res) => {
       return res.status(401).json({ error: 'Current password is incorrect' });
     }
 
-    const newHash = await bcrypt.hash(newPassword, 10);
+    const newHash = await bcrypt.hash(newPassword, config.auth.bcryptRounds || 10);
     db.run("UPDATE users SET password_hash = ? WHERE id = ?", [newHash, req.session.userId]);
     await saveDb(db);
 

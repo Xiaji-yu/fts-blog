@@ -1,7 +1,7 @@
 <%- include('partials/header', { title: title }) %>
 
 <div class="nav">
-  <a href="/admin" class="nav-brand">FTS-ADMIN</a>
+  <a href="/admin" class="nav-brand"><%= config.admin.navBrand %></a>
   <div>
     <a href="/" class="btn btn-outline btn-sm">← 主页 · HOME</a>
     &nbsp;&nbsp;
@@ -16,14 +16,14 @@
 </div>
 
 <div class="title-block" style="padding-top: 0;">
-  <h1 class="main-title"><%= post ? '编辑图纸' : '新建图纸' %></h1>
-  <p class="sub-title-en"><%= post ? 'Edit Drawing' : 'New Drawing' %></p>
+  <h1 class="main-title"><%= post ? config.admin.editor.titleEdit : config.admin.editor.titleNew %></h1>
+  <p class="sub-title-en"><%= post ? config.admin.editor.titleEditEn : config.admin.editor.titleNewEn %></p>
 </div>
 
 <hr class="divider">
 
 <div class="spec-block">
-  <p><span class="label">操作</span> <strong><%= post ? 'UPDATE' : 'CREATE' %></strong> · 图号 <strong>FTS-BLOG-<%= post ? String(post.id).padStart(3, '0') : 'NEW' %></strong></p>
+  <p><span class="label">操作</span> <strong><%= post ? 'UPDATE' : 'CREATE' %></strong> · 图号 <strong><%= config.site.drawingPrefix %>-<%= post ? String(post.id).padStart(3, '0') : 'NEW' %></strong></p>
 </div>
 
 <div class="editor-panel">
@@ -38,17 +38,17 @@
       <% } %>
 
         <div class="form-group">
-          <label class="form-label" for="title">标题 · Title (中文)</label>
+          <label class="form-label" for="title"><%= config.admin.editor.labels.titleZh %> · Title (中文)</label>
           <input type="text" id="title" name="title" class="form-input" value="<%= post ? post.title : '' %>" required>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="title_en">英文标题 · Title (EN)</label>
+          <label class="form-label" for="title_en"><%= config.admin.editor.labels.titleEn %> · Title (EN)</label>
           <input type="text" id="title_en" name="title_en" class="form-input" value="<%= post ? post.title_en || '' : '' %>">
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="slug">URL标识 · Slug</label>
+          <label class="form-label" for="slug"><%= config.admin.editor.labels.slug %> · Slug</label>
           <input type="text" id="slug" name="slug" class="form-input" value="<%= post ? post.slug : '' %>" required pattern="[a-z0-9-]+" title="Only lowercase letters, numbers, and hyphens">
           <small style="color: var(--muted); font-size: 0.8rem; margin-top: 0.25rem; display: block;">
             仅允许小写字母、数字和连字符 · Only lowercase letters, numbers, and hyphens
@@ -56,35 +56,35 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="excerpt">摘要 · Excerpt</label>
+          <label class="form-label" for="excerpt"><%= config.admin.editor.labels.excerpt %> · Excerpt</label>
           <input type="text" id="excerpt" name="excerpt" class="form-input" value="<%= post ? post.excerpt || '' : '' %>" maxlength="200">
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="content">内容 · Content (Markdown)</label>
+          <label class="form-label" for="content"><%= config.admin.editor.labels.content %> · Content (Markdown)</label>
           <textarea id="content" name="content" class="form-textarea" required><%= post ? post.content : '' %></textarea>
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="tags">标签 · Tags (逗号分隔)</label>
+          <label class="form-label" for="tags"><%= config.admin.editor.labels.tags %> · Tags (逗号分隔)</label>
           <input type="text" id="tags" name="tags" class="form-input" value="<%= post ? post.tags : '' %>" placeholder="技术, 前端, JavaScript">
         </div>
 
         <div class="form-group">
           <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
             <input type="checkbox" name="published" <%= post && post.published ? 'checked' : '' %> style="width: auto;">
-            <span>发布 · Published</span>
+            <span><%= config.admin.editor.labels.published %> · Published</span>
           </label>
         </div>
 
         <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
           <button type="button" class="btn btn-outline" onclick="previewPost()">
-            预览 · PREVIEW →
+            <%= config.admin.editor.buttons.preview %> →
           </button>
           <button type="submit" class="btn">
-            <%= post ? '更新 · UPDATE' : '创建 · CREATE' %> →
+            <%= post ? config.admin.editor.buttons.update : config.admin.editor.buttons.create %> →
           </button>
-          <a href="/admin" class="btn btn-outline">取消 · CANCEL</a>
+          <a href="/admin" class="btn btn-outline"><%= config.admin.editor.buttons.cancel %></a>
           <a href="/admin/import" class="btn btn-outline" style="font-size: 0.75rem;">📥 导入Obsidian</a>
         </div>
       </form>
@@ -157,7 +157,7 @@ function previewPost() {
     }
     throw new Error('Preview failed: ' + response.status);
   }).then(html => {
-    const previewWindow = window.open('', '_blank', 'width=1400,height=900');
+    const previewWindow = window.open('', '_blank', 'width:1400,height:900');
     if (previewWindow) {
       previewWindow.document.write(html);
       previewWindow.document.close();

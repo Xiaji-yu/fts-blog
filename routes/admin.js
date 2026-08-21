@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 const { requireAuthView } = require('../middleware/auth');
+const config = require('../config/loader');
 
 const DB_PATH = path.join(__dirname, '..', 'data', 'blog.db');
 
@@ -30,25 +31,15 @@ function decodeHtmlEntities(text) {
     .replace(/&nbsp;/g, ' ');
 }
 
-// Helper to get database connection
-async function getDb() {
-  const SQL = await initSqlJs();
-  if (fs.existsSync(DB_PATH)) {
-    const fileBuffer = fs.readFileSync(DB_PATH);
-    return new SQL.Database(fileBuffer);
-  }
-  return new SQL.Database();
-}
-
 // GET /admin/login
 router.get('/login', (req, res) => {
   if (req.session && req.session.userId) {
     return res.redirect('/admin');
   }
   res.render('admin-login', {
-    title: 'Admin Login',
-    blueprint: true,
-    nMark: true
+    title: config.admin.loginTitle || 'Admin Login',
+    blueprint: config.features.blueprint,
+    nMark: config.features.nMark
   });
 });
 
@@ -58,10 +49,10 @@ router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) {
       return res.render('admin-login', {
-        title: 'Admin Login',
+        title: config.admin.loginTitle || 'Admin Login',
         error: 'Username and password required',
-        blueprint: true,
-        nMark: true
+        blueprint: config.features.blueprint,
+        nMark: config.features.nMark
       });
     }
 
@@ -71,10 +62,10 @@ router.post('/login', async (req, res) => {
     if (result.length === 0 || result[0].values.length === 0) {
       db.close();
       return res.render('admin-login', {
-        title: 'Admin Login',
+        title: config.admin.loginTitle || 'Admin Login',
         error: 'Invalid credentials',
-        blueprint: true,
-        nMark: true
+        blueprint: config.features.blueprint,
+        nMark: config.features.nMark
       });
     }
 
@@ -84,10 +75,10 @@ router.post('/login', async (req, res) => {
     if (!valid) {
       db.close();
       return res.render('admin-login', {
-        title: 'Admin Login',
+        title: config.admin.loginTitle || 'Admin Login',
         error: 'Invalid credentials',
-        blueprint: true,
-        nMark: true
+        blueprint: config.features.blueprint,
+        nMark: config.features.nMark
       });
     }
 
@@ -98,10 +89,10 @@ router.post('/login', async (req, res) => {
     res.redirect('/admin');
   } catch (err) {
     res.render('admin-login', {
-      title: 'Admin Login',
+      title: config.admin.loginTitle || 'Admin Login',
       error: 'Server error',
-      blueprint: true,
-      nMark: true
+      blueprint: config.features.blueprint,
+      nMark: config.features.nMark
     });
   }
 });
@@ -121,11 +112,11 @@ router.get('/', requireAuthView, async (req, res) => {
     db.close();
 
     res.render('admin-dashboard', {
-      title: 'Admin Dashboard',
+      title: config.admin.dashboardTitle || 'Admin Dashboard',
       posts,
       username: req.session.username,
-      blueprint: true,
-      nMark: true
+      blueprint: config.features.blueprint,
+      nMark: config.features.nMark
     });
   } catch (err) {
     res.status(500).send('Server error');
@@ -135,11 +126,11 @@ router.get('/', requireAuthView, async (req, res) => {
 // GET /admin/new - New post editor
 router.get('/new', requireAuthView, (req, res) => {
   res.render('admin-editor', {
-    title: 'New Post',
+    title: config.admin.editor.titleNew || 'New Post',
     post: null,
     username: req.session.username,
-    blueprint: true,
-    nMark: true
+    blueprint: config.features.blueprint,
+    nMark: config.features.nMark
   });
 });
 
@@ -164,7 +155,7 @@ router.get('/edit/:id', requireAuthView, async (req, res) => {
     db.close();
 
     res.render('admin-editor', {
-      title: 'Edit Post',
+      title: config.admin.editor.titleEdit || 'Edit Post',
       post: {
         id: row[0],
         title: row[1],
@@ -177,8 +168,8 @@ router.get('/edit/:id', requireAuthView, async (req, res) => {
         tags: tags.join(', ')
       },
       username: req.session.username,
-      blueprint: true,
-      nMark: true
+      blueprint: config.features.blueprint,
+      nMark: config.features.nMark
     });
   } catch (err) {
     res.status(500).send('Server error');
@@ -202,7 +193,7 @@ router.post('/preview', requireAuthView, (req, res) => {
   const published = body.published === 'on' || body.published === true || body.published === 'true';
 
   res.render('admin-preview', {
-    title: 'Preview · ' + (body.title || '未命名'),
+    title: (config.admin.previewTitlePrefix || 'Preview · ') + (body.title || '未命名'),
     post: {
       title: body.title || '未命名标题',
       title_en: body.title_en || '',
@@ -214,8 +205,8 @@ router.post('/preview', requireAuthView, (req, res) => {
       created_at: new Date().toISOString()
     },
     username: req.session.username,
-    blueprint: true,
-    nMark: true
+    blueprint: config.features.blueprint,
+    nMark: config.features.nMark
   });
 });
 

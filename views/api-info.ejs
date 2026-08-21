@@ -1,20 +1,20 @@
 <%- include('partials/header', { title: title }) %>
 
 <div class="title-block">
-  <h1 class="main-title">API 文档</h1>
-  <p class="sub-title-en">RESTful API Documentation</p>
+  <h1 class="main-title"><%= config.api.pageTitle %></h1>
+  <p class="sub-title-en"><%= config.api.pageTitleEn %></p>
 </div>
 
 <hr class="divider">
 
 <div class="spec-block">
-  <p><span class="label">接口</span> <strong>FTS-API</strong> · 基础URL <strong>http://localhost:3000/api</strong></p>
+  <p><span class="label">接口</span> <strong><%= config.api.systemLabel %></strong> · 基础URL <strong><%= config.api.baseUrl %></strong></p>
 </div>
 
 <div class="description" style="text-align: left; max-width: 800px;">
 
   <h2 style="font-size: 1.2rem; font-weight: 600; margin: var(--spacing-lg) 0 var(--spacing-sm);">
-    公开接口 · Public Endpoints
+    <%= config.api.sections.publicEndpoints %>
   </h2>
 
   <table class="table">
@@ -45,7 +45,7 @@
   </table>
 
   <h2 style="font-size: 1.2rem; font-weight: 600; margin: var(--spacing-lg) 0 var(--spacing-sm);">
-    管理接口 · Admin Endpoints (需要认证)
+    <%= config.api.sections.adminEndpoints %>
   </h2>
 
   <table class="table">
@@ -91,27 +91,27 @@
   </table>
 
   <h2 style="font-size: 1.2rem; font-weight: 600; margin: var(--spacing-lg) 0 var(--spacing-sm);">
-    认证方式 · Authentication
+    <%= config.api.sections.authentication %>
   </h2>
 
   <div class="spec-block" style="text-align: left;">
     <p>管理接口需要 session-based 认证。</p>
     <p style="margin-top: 0.5rem;">
       登录凭证: <strong>POST /api/auth/login</strong><br>
-      请求体: <code style="font-family: var(--font-mono);">{ "username": "admin", "password": "YOUR_PASSWORD" }</code>
+      请求体: <code style="font-family: var(--font-mono);">{ "username": "<%= config.admin.defaultUsername %>", "password": "YOUR_PASSWORD" }</code>
     </p>
   </div>
 
   <h2 style="font-size: 1.2rem; font-weight: 600; margin: var(--spacing-lg) 0 var(--spacing-sm);">
-    示例 · Example
+    <%= config.api.sections.example %>
   </h2>
 
   <div class="spec-block" style="text-align: left; background: var(--bg-alt); padding: var(--spacing-md); border: 1px solid var(--border);">
     <p style="margin-bottom: 0.5rem;"># 获取所有文章</p>
-    <p>curl http://localhost:3000/api/posts</p>
+    <p>curl <%= config.api.baseUrl.replace(/\/api$/, '') %>/api/posts</p>
     <br>
     <p style="margin-bottom: 0.5rem;"># 创建新文章</p>
-    <p>curl -X POST http://localhost:3000/api/posts \<br>
+    <p>curl -X POST <%= config.api.baseUrl.replace(/\/api$/, '') %>/api/posts \<br>
     &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
     &nbsp;&nbsp;-d '{"title":"测试","slug":"test","content":"内容"}'</p>
   </div>

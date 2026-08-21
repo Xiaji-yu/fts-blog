@@ -7,10 +7,11 @@ const yaml = require('js-yaml');
 const initSqlJs = require('sql.js');
 const bcrypt = require('bcrypt');
 const { requireAuth, requireAuthView } = require('../middleware/auth');
+const config = require('../config/loader');
 
 const DB_PATH = path.join(__dirname, '..', 'data', 'blog.db');
 const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
-const OBSIDIAN_DIR = path.join(__dirname, '..', '经验');
+const OBSIDIAN_DIR = path.join(__dirname, '..', config.import.obsidianDir);
 
 // Ensure upload directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {
@@ -102,7 +103,7 @@ router.post('/import/directory', requireAuthView, async (req, res) => {
     }
 
     const files = fs.readdirSync(OBSIDIAN_DIR)
-      .filter(f => f.endsWith('.md'))
+      .filter(f => f.endsWith(config.import.fileExtension || '.md'))
       .sort();
 
     if (files.length === 0) {
@@ -149,15 +150,15 @@ router.post('/import/directory', requireAuthView, async (req, res) => {
           normalized[key] = normalizeYamlValue(value);
         }
 
-        const title = normalized.title || path.basename(filename, '.md');
+        const title = normalized.title || path.basename(filename, config.import.fileExtension || '.md');
         const titleEn = normalized.title_en || '';
-        const slug = path.basename(filename, '.md')
+        const slug = path.basename(filename, config.import.fileExtension || '.md')
           .toLowerCase()
           .replace(/[^a-z0-9一-龥]+/g, '-')
           .replace(/^-+|-+$/g, '');
 
         const excerptMatch = markdownContent.match(/^(.+?)(?:\n\n|$)/s);
-        const excerpt = excerptMatch ? excerptMatch[1].substring(0, 200) : '';
+        const excerpt = excerptMatch ? excerptMatch[1].substring(0, config.import.excerptMaxLength || 200) : '';
 
         const convertedContent = convertObsidianSyntax(markdownContent, slugToIdMap);
 
@@ -247,18 +248,18 @@ router.post('/import', requireAuthView, async (req, res) => {
         const mergedFrontmatter = { ...parsedFrontmatter, ...frontmatter };
 
         // Extract title from frontmatter or filename
-        const title = mergedFrontmatter.title || path.basename(filename, '.md');
+        const title = mergedFrontmatter.title || path.basename(filename, config.import.fileExtension || '.md');
         const titleEn = mergedFrontmatter.title_en || '';
 
         // Generate slug from filename
-        const slug = path.basename(filename, '.md')
+        const slug = path.basename(filename, config.import.fileExtension || '.md')
           .toLowerCase()
           .replace(/[^a-z0-9一-龥]+/g, '-')
           .replace(/^-+|-+$/g, '');
 
         // Extract excerpt (first paragraph after frontmatter)
         const excerptMatch = markdownContent.match(/^(.+?)(?:\n\n|$)/s);
-        const excerpt = excerptMatch ? excerptMatch[1].substring(0, 200) : '';
+        const excerpt = excerptMatch ? excerptMatch[1].substring(0, config.import.excerptMaxLength || 200) : '';
 
         // Convert Obsidian-specific syntax
         const convertedContent = convertObsidianSyntax(markdownContent, slugToIdMap);
@@ -360,12 +361,7 @@ function convertObsidianSyntax(content, slugToIdMap = {}) {
   let calloutIcon = '';
   let calloutLines = [];
 
-  const calloutTypeMap = {
-    'note': 'ℹ️', 'info': 'ℹ️',
-    'warning': '⚠️', 'danger': '🚨',
-    'tip': '💡', 'important': '❗',
-    'question': '❓'
-  };
+  const calloutTypeMap = config.import.calloutIconMap;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];

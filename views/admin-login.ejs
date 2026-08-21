@@ -1,14 +1,14 @@
 <%- include('partials/header', { title: title }) %>
 
 <div class="title-block">
-  <h1 class="main-title">管理后台</h1>
-  <p class="sub-title-en">Admin Panel · Authentication Required</p>
+  <h1 class="main-title"><%= config.admin.pageTitle %></h1>
+  <p class="sub-title-en"><%= config.admin.pageTitleEn %></p>
 </div>
 
 <hr class="divider">
 
 <div class="spec-block">
-  <p><span class="label">系统</span> <strong>FTS-ADMIN</strong> · 权限级别 <strong>ADMIN</strong></p>
+  <p><span class="label">系统</span> <strong><%= config.admin.navBrand %></strong> · 权限级别 <strong>ADMIN</strong></p>
 </div>
 
 <% if (typeof error !== 'undefined') { %>
@@ -20,7 +20,7 @@
 </div>
 <% } else { %>
 <div class="stamp" style="transform: rotate(-2deg); margin: var(--spacing-md) auto;">
-  AUTHENTICATE
+  <%= config.blueprint.labels.authenticate %>
 </div>
 <% } %>
 

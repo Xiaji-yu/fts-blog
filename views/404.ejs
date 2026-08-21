@@ -1,23 +1,23 @@
 <%- include('partials/header', { title: title }) %>
 
 <div class="title-block">
-  <h1 class="main-title">404</h1>
-  <p class="sub-title-en">Not Found · 图纸未找到</p>
+  <h1 class="main-title"><%= config.errors['404'].errorCode %></h1>
+  <p class="sub-title-en"><%= config.errors['404'].subtitle %></p>
 </div>
 
 <hr class="divider">
 
 <div class="spec-block">
-  <p><span class="label">错误</span> <strong>ERR_404</strong> · 请求的资源不存在</p>
+  <p><span class="label">错误</span> <strong><%= config.errors['404'].errorCode %></strong> · <%= config.errors['404'].message %></p>
 </div>
 
 <div class="description">
-  <p>该图纸编号不存在或已被移除。</p>
-  <p class="mt-sm">The drawing you requested does not exist or has been removed.</p>
+  <p><%= config.errors['404'].body %></p>
+  <p class="mt-sm"><%= config.errors['404'].bodyEn %></p>
 </div>
 
 <div class="text-center">
-  <div class="stamp">图纸未找到</div>
+  <div class="stamp"><%= config.errors['404'].stamp %></div>
 </div>
 
 <div class="text-center mt-lg">

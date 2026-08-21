@@ -4,6 +4,7 @@ const initSqlJs = require('sql.js');
 const path = require('path');
 const fs = require('fs');
 const marked = require('marked');
+const config = require('../config/loader');
 
 const DB_PATH = path.join(__dirname, '..', 'data', 'blog.db');
 
@@ -53,11 +54,11 @@ router.get('/', async (req, res) => {
     db.close();
 
     res.render('index', {
-      title: '夏祭博客 · Xiaji\'s Blog',
+      title: `${config.site.name} · ${config.site.tagline}`,
       posts,
       postCount,
-      blueprint: true,
-      nMark: true
+      blueprint: config.features.blueprint,
+      nMark: config.features.nMark
     });
   } catch (err) {
     res.status(500).send('Server error');
@@ -76,15 +77,15 @@ router.get('/post/:id', async (req, res) => {
     if (result.length === 0 || result[0].values.length === 0) {
       db.close();
       return res.status(404).render('404', {
-        title: '404 - Not Found',
-        blueprint: true,
-        nMark: true
+        title: config.errors['404'].title,
+        blueprint: config.features.blueprint,
+        nMark: config.features.nMark
       });
     }
 
     const row = result[0].values[0];
     const tagsResult = db.exec(
-      "SELECT t.name FROM tags t JOIN post_tags pt ON t.id = pt.tag_id WHERE pt.post_id = ?",
+      "SELECT t.name FROM tags t JOIN post_tags pt ON t.id = pt.post_id WHERE pt.post_id = ?",
       [row[0]]
     );
     const tags = tagsResult.length > 0 ? tagsResult[0].values.map(t => t[0]) : [];
@@ -109,8 +110,8 @@ router.get('/post/:id', async (req, res) => {
         tags
       },
       readTime,
-      blueprint: true,
-      nMark: true
+      blueprint: config.features.blueprint,
+      nMark: config.features.nMark
     });
   } catch (err) {
     res.status(500).send('Server error');
@@ -120,9 +121,9 @@ router.get('/post/:id', async (req, res) => {
 // GET /api - API info page
 router.get('/api', (req, res) => {
   res.render('api-info', {
-    title: 'API Documentation',
-    blueprint: true,
-    nMark: true
+    title: config.api.pageTitle,
+    blueprint: config.features.blueprint,
+    nMark: config.features.nMark
   });
 });
 

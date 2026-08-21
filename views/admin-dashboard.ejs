@@ -1,7 +1,7 @@
 <%- include('partials/header', { title: title }) %>
 
 <div class="nav">
-  <a href="/admin" class="nav-brand">FTS-ADMIN</a>
+  <a href="/admin" class="nav-brand"><%= config.admin.navBrand %></a>
   <div>
     <a href="/" class="btn btn-outline btn-sm">← 主页 · HOME</a>
     &nbsp;&nbsp;
@@ -20,25 +20,25 @@
 </div>
 
 <div class="title-block" style="padding-top: 0;">
-  <h1 class="main-title">控制面板</h1>
-  <p class="sub-title-en">Dashboard · Content Management System</p>
+  <h1 class="main-title"><%= config.admin.dashboardTitle %></h1>
+  <p class="sub-title-en"><%= config.admin.dashboardTitleEn %></p>
 </div>
 
 <hr class="divider">
 
 <div class="spec-block">
-  <p><span class="label">系统</span> <strong>FTS-CMS</strong> · 文章总数 <strong><%= posts.length %></strong></p>
+  <p><span class="label">系统</span> <strong><%= config.admin.systemLabel %></strong> · 文章总数 <strong><%= posts.length %></strong></p>
 </div>
 
 <div style="text-align: center; margin: var(--spacing-md) 0;">
-  <a href="/admin/new" class="btn">+ 新建图纸 · NEW POST</a>
+  <a href="/admin/new" class="btn"><%= config.admin.newPostLabel %></a>
   &nbsp;&nbsp;
-  <a href="/admin/import" class="btn btn-outline">📥 导入 Obsidian · IMPORT</a>
+  <a href="/admin/import" class="btn btn-outline"><%= config.admin.importLabel %></a>
 </div>
 
 <% if (posts.length === 0) { %>
 <div class="description">
-  <p>暂无图纸。点击上方按钮创建第一篇文章。</p>
+  <p><%= config.admin.noPostsMessage %></p>
 </div>
 <% } else { %>
 <table class="table">

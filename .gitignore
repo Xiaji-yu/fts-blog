@@ -1,3 +1,5 @@
+# .gitignore
+
 # Dependencies
 node_modules/
 
@@ -7,6 +9,9 @@ data/*.db
 
 # Uploads
 uploads/
+
+# Config (contains sensitive/personalized settings)
+config.json
 
 # Logs
 *.log

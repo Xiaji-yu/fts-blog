@@ -1,7 +1,7 @@
 <%- include('partials/header', { title: title, wide: true }) %>
 
 <div class="nav">
-  <a href="/admin" class="nav-brand">FTS-ADMIN</a>
+  <a href="/admin" class="nav-brand"><%= config.admin.navBrand %></a>
   <div>
     <a href="/" class="btn btn-outline btn-sm">← 主页 · HOME</a>
     &nbsp;&nbsp;
@@ -24,7 +24,7 @@
 <hr class="divider">
 
 <div class="spec-block">
-  <p><span class="label">图号</span> <strong>FTS-BLOG-PREVIEW</strong> · 比例 1:1</p>
+  <p><span class="label">图号</span> <strong><%= config.site.drawingPrefix %>-PREVIEW</strong> · 比例 1:1</p>
   <p><span class="label">状态</span> <strong><%= post.published ? 'PUBLISHED' : 'DRAFT' %></strong></p>
   <% if (post.excerpt) { %>
   <p><span class="label">摘要</span> <strong><%= post.excerpt %></strong></p>

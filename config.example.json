@@ -1,0 +1,52 @@
+{
+  "site": {
+    "name": "夏祭博客",
+    "shortName": "夏祭",
+    "description": "夏祭 · 个人前端试验场",
+    "tagline": "Xiaji · Frontend Proving Ground",
+    "descriptionLong": "夏祭的个人前端试验场。每张「图纸」是一件独立的作品，探索前端技术的边界。"
+  },
+  "author": {
+    "name": "夏祭",
+    "project": "Frontend Test Suite · FTS-BLOG"
+  },
+  "blueprint": {
+    "enabled": true,
+    "prefix": "FTS",
+    "version": "v1.0",
+    "labels": {
+      "drawingNumber": "图号",
+      "scale": "比例",
+      "system": "系统",
+      "interface": "接口",
+      "operation": "操作",
+      "authorDesign": "设计/绘制",
+      "authorProject": "工程",
+      "registration": "备案",
+      "drawingNotFound": "图纸未找到",
+      "authenticate": "AUTHENTICATE"
+    }
+  },
+  "admin": {
+    "defaultUsername": "admin"
+  },
+  "footer": {
+    "beianUrl": "http://www.beian.gov.cn/",
+    "beianLabel": "公网安备",
+    "beianNumber": "沪公网安备31011202022181号",
+    "icpUrl": "https://beian.miit.gov.cn/",
+    "icpNumber": "沪ICP备2026007186号"
+  },
+  "api": {
+    "baseUrl": "http://localhost:3000/api"
+  },
+  "upload": {
+    "maxFileSizeMB": 5
+  },
+  "session": {
+    "maxAgeHours": 24
+  },
+  "pagination": {
+    "defaultLimit": 10
+  }
+}

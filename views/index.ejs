@@ -14,20 +14,20 @@
 <div class="homepage-content">
 
 <div class="title-block">
-  <h1 class="main-title">夏祭博客</h1>
-  <h2 class="sub-title">夏祭 · 个人前端试验场</h2>
-  <p class="sub-title-en">Xiaji · Frontend Proving Ground</p>
+  <h1 class="main-title"><%= config.site.name %></h1>
+  <h2 class="sub-title"><%= config.site.description %></h2>
+  <p class="sub-title-en"><%= config.site.tagline %></p>
 </div>
 
 <hr class="divider">
 
 <div class="spec-block">
-  <p><span class="label">图号</span> <strong>FTS-INDEX</strong> · 比例 1:1</p>
+  <p><span class="label">图号</span> <strong><%= config.blueprint.prefix %>-INDEX</strong> · 比例 1:1</p>
   <p>共 <strong><%= postCount %></strong> 张图纸 · 持续增补</p>
 </div>
 
 <div class="description">
-  夏祭的个人前端试验场。每张「图纸」是一件独立的作品，探索前端技术的边界。
+  <%= config.site.descriptionLong %>
 </div>
 
 <% if (posts.length === 0) { %>

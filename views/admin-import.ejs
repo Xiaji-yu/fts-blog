@@ -1,7 +1,7 @@
 <%- include('partials/header', { title: title }) %>
 
 <div class="nav">
-  <a href="/admin" class="nav-brand">FTS-ADMIN</a>
+  <a href="/admin" class="nav-brand"><%= config.admin.navBrand %></a>
   <div>
     <a href="/" class="btn btn-outline btn-sm">← 主页 · HOME</a>
     &nbsp;&nbsp;
@@ -16,8 +16,8 @@
 </div>
 
 <div class="title-block" style="padding-top: 0;">
-  <h1 class="main-title">Obsidian 导入</h1>
-  <p class="sub-title-en">Import from Obsidian Vault</p>
+  <h1 class="main-title"><%= config.admin.importTitle %></h1>
+  <p class="sub-title-en"><%= config.admin.importTitleEn %></p>
 </div>
 
 <hr class="divider">
@@ -48,7 +48,7 @@
 
   <div style="background: var(--bg-card); border: 1px solid var(--border); padding: var(--spacing-md); margin-bottom: var(--spacing-md); text-align: center;">
     <p style="color: var(--fg-dim); margin-bottom: var(--spacing-sm);">
-      从 <strong>经验/</strong> 目录批量导入所有 .md 文件（跳过已导入的）
+      从 <strong><%= config.import.obsidianDirLabel %></strong> 目录批量导入所有 .md 文件（跳过已导入的）
     </p>
     <button id="scanBtn" class="btn btn-outline">
       扫描经验目录 · SCAN & IMPORT
@@ -300,7 +300,7 @@ if (scanBtn) {
     scanBtn.disabled = true;
     scanBtn.textContent = '扫描中... · SCANNING...';
     statusDiv.style.display = 'block';
-    statusDiv.innerHTML = '<p style="color: var(--fg-dim);">正在扫描 经验/ 目录...</p>';
+    statusDiv.innerHTML = '<p style="color: var(--fg-dim);">正在扫描 <%= config.import.obsidianDirLabel %> 目录...</p>';
 
     try {
       const response = await fetch('/admin/import/directory', {

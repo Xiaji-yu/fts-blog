@@ -10,7 +10,7 @@
 <hr class="divider">
 
 <div class="spec-block">
-  <p><span class="label">图号</span> <strong>FTS-BLOG-<%= String(post.id).padStart(3, '0') %></strong> · 比例 1:1</p>
+  <p><span class="label">图号</span> <strong><%= config.site.drawingPrefix %>-<%= String(post.id).padStart(3, '0') %></strong> · 比例 1:1</p>
   <p><span class="label">日期</span> <strong><%= new Date(post.created_at).toLocaleDateString('zh-CN') %></strong> · 阅读时间 <strong><%= readTime %> min</strong></p>
 </div>
 
@@ -46,7 +46,7 @@
 <hr class="divider">
 
 <div class="text-center mt-md">
-  <a href="/" class="card-link" style="display: inline-flex; border: 1px solid var(--border); padding: 0.5rem 1.2rem; background: rgba(100, 200, 255, 0.05);">← BACK TO INDEX</a>
+  <a href="/" class="card-link" style="display: inline-flex; border: 1px solid var(--border); padding: 0.5rem 1.2rem; background: rgba(100, 200, 255, 0.05);"><%= config.post.backToIndex %></a>
 </div>
 
 <script>
