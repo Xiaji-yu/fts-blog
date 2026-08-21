@@ -7,7 +7,7 @@ import os
 
 HOST = 'xiaji.xin'
 USER = 'tempuser'
-PASS = 'testpassword'
+PASS = 'test'
 
 FILES = [
     (r'D:\code\blog\fts-blog\routes\import.js', '/var/www/blog/routes/import.js'),

@@ -7,7 +7,7 @@ import time
 
 HOST = 'xiaji.xin'
 USER = 'tempuser'
-PASS = 'testpassword'
+PASS = 'test'
 ROOT_PASS = None  # We'll try without password first
 
 def ssh_exec(client, cmd):

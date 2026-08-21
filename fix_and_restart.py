@@ -6,7 +6,7 @@ import sys
 
 HOST = 'xiaji.xin'
 USER = 'tempuser'
-PASS = 'testpassword'
+PASS = 'test'
 
 def ssh_exec(client, cmd):
     stdin, stdout, stderr = client.exec_command(cmd)

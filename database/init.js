@@ -61,9 +61,11 @@ async function initDatabase() {
   // Seed admin user if not exists
   const result = db.exec("SELECT COUNT(*) as count FROM users WHERE username = 'admin'");
   if (result.length === 0 || result[0].values[0][0] === 0) {
-    const hash = await bcrypt.hash('admin123', 10);
+    const randomPassword = 'admin-' + crypto.randomBytes(6).toString('hex');
+    const hash = await bcrypt.hash(randomPassword, 10);
     db.run("INSERT INTO users (username, password_hash) VALUES (?, ?)", ['admin', hash]);
-    console.log('✓ Admin user created (username: admin, password: admin123)');
+    console.log('✓ Admin user created (username: admin, password: ' + randomPassword + ')');
+    console.log('⚠ 请妥善保管此密码，登录后请立即修改');
   }
 
   // Save database

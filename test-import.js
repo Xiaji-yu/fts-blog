@@ -50,7 +50,7 @@ async function testObsidianImport() {
   console.log('[1] Logging in...');
   const loginRes = await makeRequest('POST', '/api/auth/login', {
     username: 'admin',
-    password: 'admin123'
+    password: 'test'
   });
 
   if (loginRes.status !== 200) {

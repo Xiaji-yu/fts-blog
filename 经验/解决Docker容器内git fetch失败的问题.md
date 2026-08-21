@@ -204,7 +204,7 @@ echo eC1hY2Nlc3MtdG9rZW46Z2hzXzM2S2JYVTRzTEIyOUFYR3dIYmVieEpjTEpIZTRoZzNOMEJqTA=
 ```
 结果为：
 ```
-x-access-token:ghs_36KbXU4sLB29AXGwHbebxDcLJHe4hg3N0BjL
+x-access-token:ghs_36KbXU4sLB29AXGwHxxxxxxxxxxxxxxxxxxxx
 ```
 ==🚨 这是一个 **GitHub Actions 的自动令牌（`ghs_...`）**，通常用于 CI 环境，**且已过期或无权限访问该仓库**。==
 Git 在每次请求时都会带上这个无效的 `Authorization` 头，导致 GitHub 认为你在尝试用无效凭据认证，于是返回：
