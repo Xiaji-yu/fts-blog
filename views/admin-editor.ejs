@@ -1,0 +1,174 @@
+<%- include('partials/header', { title: title }) %>
+
+<div class="nav">
+  <a href="/admin" class="nav-brand">FTS-ADMIN</a>
+  <div>
+    <a href="/" class="btn btn-outline btn-sm">← 主页 · HOME</a>
+    &nbsp;&nbsp;
+    <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);">
+      用户: <strong><%= username %></strong>
+    </span>
+    &nbsp;&nbsp;
+    <form method="POST" action="/admin/logout" style="display: inline;">
+      <button type="submit" class="btn btn-outline btn-sm">登出</button>
+    </form>
+  </div>
+</div>
+
+<div class="title-block" style="padding-top: 0;">
+  <h1 class="main-title"><%= post ? '编辑图纸' : '新建图纸' %></h1>
+  <p class="sub-title-en"><%= post ? 'Edit Drawing' : 'New Drawing' %></p>
+</div>
+
+<hr class="divider">
+
+<div class="spec-block">
+  <p><span class="label">操作</span> <strong><%= post ? 'UPDATE' : 'CREATE' %></strong> · 图号 <strong>FTS-BLOG-<%= post ? String(post.id).padStart(3, '0') : 'NEW' %></strong></p>
+</div>
+
+<div class="editor-panel">
+  <div class="panel-header">
+    <span class="panel-title">编辑 · EDITOR</span>
+  </div>
+
+  <div class="description" style="text-align: left; max-width: 100%;">
+    <form method="POST" action="<%= post ? '/api/posts/' + post.id : '/api/posts' %>" id="post-form">
+      <% if (post) { %>
+      <input type="hidden" name="_method" value="PUT">
+      <% } %>
+
+        <div class="form-group">
+          <label class="form-label" for="title">标题 · Title (中文)</label>
+          <input type="text" id="title" name="title" class="form-input" value="<%= post ? post.title : '' %>" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="title_en">英文标题 · Title (EN)</label>
+          <input type="text" id="title_en" name="title_en" class="form-input" value="<%= post ? post.title_en || '' : '' %>">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="slug">URL标识 · Slug</label>
+          <input type="text" id="slug" name="slug" class="form-input" value="<%= post ? post.slug : '' %>" required pattern="[a-z0-9-]+" title="Only lowercase letters, numbers, and hyphens">
+          <small style="color: var(--muted); font-size: 0.8rem; margin-top: 0.25rem; display: block;">
+            仅允许小写字母、数字和连字符 · Only lowercase letters, numbers, and hyphens
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="excerpt">摘要 · Excerpt</label>
+          <input type="text" id="excerpt" name="excerpt" class="form-input" value="<%= post ? post.excerpt || '' : '' %>" maxlength="200">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="content">内容 · Content (Markdown)</label>
+          <textarea id="content" name="content" class="form-textarea" required><%= post ? post.content : '' %></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="tags">标签 · Tags (逗号分隔)</label>
+          <input type="text" id="tags" name="tags" class="form-input" value="<%= post ? post.tags : '' %>" placeholder="技术, 前端, JavaScript">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" name="published" <%= post && post.published ? 'checked' : '' %> style="width: auto;">
+            <span>发布 · Published</span>
+          </label>
+        </div>
+
+        <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline" onclick="previewPost()">
+            预览 · PREVIEW →
+          </button>
+          <button type="submit" class="btn">
+            <%= post ? '更新 · UPDATE' : '创建 · CREATE' %> →
+          </button>
+          <a href="/admin" class="btn btn-outline">取消 · CANCEL</a>
+          <a href="/admin/import" class="btn btn-outline" style="font-size: 0.75rem;">📥 导入Obsidian</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Intercept form submission
+document.getElementById('post-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const form = e.target;
+  const formData = new FormData(form);
+  const isEdit = <%= post ? 'true' : 'false' %>;
+  const url = isEdit ? '/api/posts/<%= post ? post.id : '' %>' : '/api/posts';
+  const method = isEdit ? 'PUT' : 'POST';
+
+  const data = {};
+  formData.forEach((value, key) => {
+    if (key === 'tags') {
+      data[key] = value;
+    } else if (key === 'published') {
+      data[key] = true;
+    } else {
+      data[key] = value;
+    }
+  });
+
+  try {
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (response.ok) {
+      window.location.href = '/admin';
+    } else {
+      const result = await response.json();
+      alert('操作失败 · Failed: ' + (result.error || 'Unknown error'));
+    }
+  } catch (err) {
+    alert('网络错误 · Network error: ' + err.message);
+  }
+});
+</script>
+
+<script>
+function previewPost() {
+  const form = document.getElementById('post-form');
+  const formData = new FormData(form);
+  const data = Object.fromEntries(formData.entries());
+
+  console.log('Preview data:', JSON.stringify(data));
+
+  fetch('/admin/preview', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data)
+  }).then(response => {
+    console.log('Response status:', response.status);
+    if (response.ok) {
+      return response.text();
+    }
+    throw new Error('Preview failed: ' + response.status);
+  }).then(html => {
+    const previewWindow = window.open('', '_blank', 'width=1400,height=900');
+    if (previewWindow) {
+      previewWindow.document.write(html);
+      previewWindow.document.close();
+    } else {
+      alert('无法打开预览窗口，请检查浏览器弹窗拦截设置');
+    }
+  }).catch(err => {
+    alert('预览失败: ' + err.message);
+    console.error(err);
+  });
+}
+</script>
+
+<%- include('partials/footer') %>

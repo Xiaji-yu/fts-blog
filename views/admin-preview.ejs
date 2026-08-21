@@ -1,0 +1,124 @@
+<%- include('partials/header', { title: title, wide: true }) %>
+
+<div class="nav">
+  <a href="/admin" class="nav-brand">FTS-ADMIN</a>
+  <div>
+    <a href="/" class="btn btn-outline btn-sm">← 主页 · HOME</a>
+    &nbsp;&nbsp;
+    <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);">
+      用户: <strong><%= username %></strong>
+    </span>
+    &nbsp;&nbsp;
+    <a href="/admin" class="btn btn-outline btn-sm">← 返回编辑</a>
+    <button type="button" class="btn btn-outline btn-sm" onclick="window.location.reload()">刷新 · REFRESH</button>
+  </div>
+</div>
+
+<div class="title-block">
+  <h1 class="main-title"><%= post.title %></h1>
+  <% if (post.title_en) { %>
+  <p class="sub-title-en"><%= post.title_en %></p>
+  <% } %>
+</div>
+
+<hr class="divider">
+
+<div class="spec-block">
+  <p><span class="label">图号</span> <strong>FTS-BLOG-PREVIEW</strong> · 比例 1:1</p>
+  <p><span class="label">状态</span> <strong><%= post.published ? 'PUBLISHED' : 'DRAFT' %></strong></p>
+  <% if (post.excerpt) { %>
+  <p><span class="label">摘要</span> <strong><%= post.excerpt %></strong></p>
+  <% } %>
+</div>
+
+<div class="post-layout">
+  <aside class="toc-sidebar">
+    <div class="toc-title">目录 · CONTENTS</div>
+    <nav class="toc-nav" id="tocNav">
+      <p style="color: var(--muted); font-size: 0.8rem; font-family: var(--font-mono);">— 无目录 —</p>
+    </nav>
+  </aside>
+  <article class="post-content-full">
+    <div class="description post-body" id="postContent">
+      <%- marked.parse(post.content) %>
+    </div>
+
+    <% if (post.tags && post.tags.length > 0) { %>
+    <hr class="divider">
+    <div class="preview-tags">
+      <% post.tags.forEach(tag => { %>
+        <span class="tag"><%= tag %></span>
+      <% }) %>
+    </div>
+    <% } %>
+
+    <hr class="divider">
+    <div class="preview-meta">
+      <p style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--muted); letter-spacing: 0.06em;">
+        PREVIEW MODE · 预览模式
+      </p>
+    </div>
+  </article>
+</div>
+
+<script>
+function generateToc() {
+  const content = document.getElementById('postContent');
+  const headings = content.querySelectorAll('h2, h3');
+  const tocNav = document.getElementById('tocNav');
+
+  if (headings.length === 0) {
+    tocNav.innerHTML = '<p style="color: var(--muted); font-size: 0.8rem; font-family: var(--font-mono);">— 无目录 —</p>';
+    return;
+  }
+
+  let tocHtml = '';
+  headings.forEach((heading, index) => {
+    const id = 'heading-' + index;
+    heading.id = id;
+    const level = parseInt(heading.tagName.substring(1));
+    const indent = level === 3 ? 'margin-left: 1rem;' : '';
+    tocHtml += `<a href="#${id}" class="toc-link" data-target="${id}" style="${indent}">${heading.textContent}</a>`;
+  });
+
+  tocNav.innerHTML = tocHtml;
+
+  document.querySelectorAll('.toc-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const targetId = this.getAttribute('data-target');
+      const target = document.getElementById(targetId);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  const observerOptions = {
+    rootMargin: '-80px 0px -70% 0px',
+    threshold: 0
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.id;
+      const link = document.querySelector(`.toc-link[data-target="${id}"]`);
+      if (link) {
+        if (entry.isIntersecting) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      }
+    });
+  }, observerOptions);
+
+  headings.forEach(heading => observer.observe(heading));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  generateToc();
+});
+</script>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,194 @@
+<%- include('partials/header', { title: title }) %>
+
+<div class="nav">
+  <a href="/admin" class="nav-brand">FTS-ADMIN</a>
+  <div>
+    <a href="/" class="btn btn-outline btn-sm">← 主页 · HOME</a>
+    &nbsp;&nbsp;
+    <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);">
+      用户: <strong><%= username %></strong>
+    </span>
+    &nbsp;&nbsp;
+    <form method="POST" action="/admin/logout" style="display: inline;">
+      <button type="submit" class="btn btn-outline btn-sm">登出</button>
+    </form>
+    &nbsp;&nbsp;
+    <button class="btn btn-outline btn-sm" onclick="showPasswordModal()">🔑 修改密码</button>
+  </div>
+</div>
+
+<div class="title-block" style="padding-top: 0;">
+  <h1 class="main-title">控制面板</h1>
+  <p class="sub-title-en">Dashboard · Content Management System</p>
+</div>
+
+<hr class="divider">
+
+<div class="spec-block">
+  <p><span class="label">系统</span> <strong>FTS-CMS</strong> · 文章总数 <strong><%= posts.length %></strong></p>
+</div>
+
+<div style="text-align: center; margin: var(--spacing-md) 0;">
+  <a href="/admin/new" class="btn">+ 新建图纸 · NEW POST</a>
+  &nbsp;&nbsp;
+  <a href="/admin/import" class="btn btn-outline">📥 导入 Obsidian · IMPORT</a>
+</div>
+
+<% if (posts.length === 0) { %>
+<div class="description">
+  <p>暂无图纸。点击上方按钮创建第一篇文章。</p>
+</div>
+<% } else { %>
+<table class="table">
+  <thead>
+    <tr>
+      <th style="width: 60px;">ID</th>
+      <th>标题</th>
+      <th style="width: 100px;">状态</th>
+      <th style="width: 150px;">创建日期</th>
+      <th style="width: 200px;">操作</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% posts.forEach(post => { %>
+    <tr>
+      <td><%= post.id %></td>
+      <td>
+        <strong><%= post.title %></strong>
+        <% if (post.title_en) { %>
+        <div style="font-size: 0.8rem; color: var(--muted); font-family: var(--font-mono);"><%= post.title_en %></div>
+        <% } %>
+      </td>
+      <td>
+        <span class="stamp" style="font-size: 0.65rem; padding: 0.2rem 0.5rem; transform: none; margin: 0; border-width: 1px;">
+          <%= post.published ? 'PUBLISHED' : 'DRAFT' %>
+        </span>
+      </td>
+      <td><%= new Date(post.created_at).toLocaleDateString('zh-CN') %></td>
+      <td>
+        <a href="/admin/edit/<%= post.id %>" class="btn btn-outline btn-sm">编辑</a>
+        <button class="btn btn-danger btn-sm" onclick="deletePost(<%= post.id %>, <%- JSON.stringify(post.title) %>)">删除</button>
+      </td>
+    </tr>
+    <% }) %>
+  </tbody>
+</table>
+<% } %>
+
+<!-- Password Change Modal -->
+<div id="password-modal" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>修改密码 · Change Password</h3>
+      <button class="modal-close" onclick="closePasswordModal()">&times;</button>
+    </div>
+    <form id="password-form" onsubmit="changePassword(event)">
+      <div class="form-group">
+        <label class="form-label">当前密码 · Current Password</label>
+        <input type="password" id="current-password" class="form-input" required autocomplete="current-password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">新密码 · New Password</label>
+        <input type="password" id="new-password" class="form-input" required minlength="6" autocomplete="new-password">
+        <p style="font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem;">至少 6 个字符 · At least 6 characters</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">确认新密码 · Confirm New Password</label>
+        <input type="password" id="confirm-password" class="form-input" required minlength="6" autocomplete="new-password">
+      </div>
+      <div id="password-error" style="color: #e74c3c; margin-bottom: 0.5rem; display: none;"></div>
+      <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+        <button type="button" class="btn btn-outline" onclick="closePasswordModal()">取消 · Cancel</button>
+        <button type="submit" class="btn">确认修改 · CONFIRM</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function showPasswordModal() {
+  document.getElementById('password-modal').style.display = 'flex';
+  document.getElementById('current-password').value = '';
+  document.getElementById('new-password').value = '';
+  document.getElementById('confirm-password').value = '';
+  document.getElementById('password-error').style.display = 'none';
+}
+
+function closePasswordModal() {
+  document.getElementById('password-modal').style.display = 'none';
+}
+
+async function changePassword(e) {
+  e.preventDefault();
+
+  const current = document.getElementById('current-password').value;
+  const newPass = document.getElementById('new-password').value;
+  const confirm = document.getElementById('confirm-password').value;
+  const errorEl = document.getElementById('password-error');
+
+  if (newPass !== confirm) {
+    errorEl.textContent = '两次输入的新密码不一致 · Passwords do not match';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  errorEl.style.display = 'none';
+
+  try {
+    const response = await fetch('/api/auth/password', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword: current, newPassword: newPass })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      alert('密码修改成功 · Password updated successfully\n请使用新密码重新登录 · Please log in with your new password');
+      closePasswordModal();
+      window.location.href = '/admin/logout';
+    } else {
+      errorEl.textContent = data.error || 'Password change failed';
+      errorEl.style.display = 'block';
+    }
+  } catch (err) {
+    errorEl.textContent = 'Network error: ' + err.message;
+    errorEl.style.display = 'block';
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('password-modal')?.addEventListener('click', function(e) {
+  if (e.target === this) closePasswordModal();
+});
+
+async function deletePost(id, title) {
+  if (!confirm(`确定删除「${title}」？\n\n此操作不可撤销。\n\nDelete "${title}"?\n\nThis action cannot be undone.`)) {
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/posts/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.ok) {
+      alert('✓ 删除成功 · Post deleted');
+      window.location.href = '/admin';
+    } else if (response.status === 401) {
+      alert('✗ 未授权，请重新登录 · Unauthorized');
+      window.location.href = '/admin/login';
+    } else {
+      const data = await response.json();
+      alert(`✗ 删除失败 · Delete failed: ${data.error || 'Unknown error'}`);
+    }
+  } catch (err) {
+    alert(`✗ 网络错误 · Network error: ${err.message}`);
+  }
+}
+</script>
+
+<%- include('partials/footer') %>

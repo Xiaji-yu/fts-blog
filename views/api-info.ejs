@@ -1,0 +1,121 @@
+<%- include('partials/header', { title: title }) %>
+
+<div class="title-block">
+  <h1 class="main-title">API 文档</h1>
+  <p class="sub-title-en">RESTful API Documentation</p>
+</div>
+
+<hr class="divider">
+
+<div class="spec-block">
+  <p><span class="label">接口</span> <strong>FTS-API</strong> · 基础URL <strong>http://localhost:3000/api</strong></p>
+</div>
+
+<div class="description" style="text-align: left; max-width: 800px;">
+
+  <h2 style="font-size: 1.2rem; font-weight: 600; margin: var(--spacing-lg) 0 var(--spacing-sm);">
+    公开接口 · Public Endpoints
+  </h2>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th style="width: 80px;">方法</th>
+        <th>端点</th>
+        <th>描述</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>GET</strong></td>
+        <td><code style="font-family: var(--font-mono); font-size: 0.85rem;">/api/posts</code></td>
+        <td>获取已发布的文章列表（分页）</td>
+      </tr>
+      <tr>
+        <td><strong>GET</strong></td>
+        <td><code style="font-family: var(--font-mono); font-size: 0.85rem;">/api/posts/:slug</code></td>
+        <td>根据 slug 获取单篇文章</td>
+      </tr>
+      <tr>
+        <td><strong>GET</strong></td>
+        <td><code style="font-family: var(--font-mono); font-size: 0.85rem;">/api/tags</code></td>
+        <td>获取所有标签</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 style="font-size: 1.2rem; font-weight: 600; margin: var(--spacing-lg) 0 var(--spacing-sm);">
+    管理接口 · Admin Endpoints (需要认证)
+  </h2>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th style="width: 80px;">方法</th>
+        <th>端点</th>
+        <th>描述</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>POST</strong></td>
+        <td><code style="font-family: var(--font-mono); font-size: 0.85rem;">/api/auth/login</code></td>
+        <td>管理员登录</td>
+      </tr>
+      <tr>
+        <td><strong>POST</strong></td>
+        <td><code style="font-family: var(--font-mono); font-size: 0.85rem;">/api/auth/logout</code></td>
+        <td>管理员登出</td>
+      </tr>
+      <tr>
+        <td><strong>POST</strong></td>
+        <td><code style="font-family: var(--font-mono); font-size: 0.85rem;">/api/posts</code></td>
+        <td>创建新文章</td>
+      </tr>
+      <tr>
+        <td><strong>PUT</strong></td>
+        <td><code style="font-family: var(--font-mono); font-size: 0.85rem;">/api/posts/:id</code></td>
+        <td>更新文章</td>
+      </tr>
+      <tr>
+        <td><strong>DELETE</strong></td>
+        <td><code style="font-family: var(--font-mono); font-size: 0.85rem;">/api/posts/:id</code></td>
+        <td>删除文章</td>
+      </tr>
+      <tr>
+        <td><strong>POST</strong></td>
+        <td><code style="font-family: var(--font-mono); font-size: 0.85rem;">/api/upload</code></td>
+        <td>上传图片 (multipart/form-data)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 style="font-size: 1.2rem; font-weight: 600; margin: var(--spacing-lg) 0 var(--spacing-sm);">
+    认证方式 · Authentication
+  </h2>
+
+  <div class="spec-block" style="text-align: left;">
+    <p>管理接口需要 session-based 认证。</p>
+    <p style="margin-top: 0.5rem;">
+      登录凭证: <strong>POST /api/auth/login</strong><br>
+      请求体: <code style="font-family: var(--font-mono);">{ "username": "admin", "password": "admin123" }</code>
+    </p>
+  </div>
+
+  <h2 style="font-size: 1.2rem; font-weight: 600; margin: var(--spacing-lg) 0 var(--spacing-sm);">
+    示例 · Example
+  </h2>
+
+  <div class="spec-block" style="text-align: left; background: var(--bg-alt); padding: var(--spacing-md); border: 1px solid var(--border);">
+    <p style="margin-bottom: 0.5rem;"># 获取所有文章</p>
+    <p>curl http://localhost:3000/api/posts</p>
+    <br>
+    <p style="margin-bottom: 0.5rem;"># 创建新文章</p>
+    <p>curl -X POST http://localhost:3000/api/posts \<br>
+    &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+    &nbsp;&nbsp;-d '{"title":"测试","slug":"test","content":"内容"}'</p>
+  </div>
+
+</div>
+
+<%- include('partials/footer') %>

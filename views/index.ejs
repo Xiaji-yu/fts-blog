@@ -1,0 +1,77 @@
+<%- include('partials/header', { title: title, wide: true }) %>
+
+<style>
+  .homepage-content .title-block,
+  .homepage-content .post-grid,
+  .homepage-content .card,
+  .homepage-content .card-link,
+  .homepage-content .tag {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+</style>
+
+<div class="homepage-content">
+
+<div class="title-block">
+  <h1 class="main-title">夏祭博客</h1>
+  <h2 class="sub-title">夏祭 · 个人前端试验场</h2>
+  <p class="sub-title-en">Xiaji · Frontend Proving Ground</p>
+</div>
+
+<hr class="divider">
+
+<div class="spec-block">
+  <p><span class="label">图号</span> <strong>FTS-INDEX</strong> · 比例 1:1</p>
+  <p>共 <strong><%= postCount %></strong> 张图纸 · 持续增补</p>
+</div>
+
+<div class="description">
+  夏祭的个人前端试验场。每张「图纸」是一件独立的作品，探索前端技术的边界。
+</div>
+
+<% if (posts.length === 0) { %>
+<div class="description">
+  <p>暂无图纸。</p>
+  <p class="mt-sm">前往 <a href="/admin">管理后台</a> 创建第一篇文章。</p>
+</div>
+<% } else { %>
+<div class="post-grid">
+  <% posts.forEach(post => { %>
+  <article class="card" ondblclick="window.location.href='/post/<%= post.slug %>'">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title">
+          <%= post.title %>
+        </h3>
+        <% if (post.title_en) { %>
+        <div class="card-title-en"><%= post.title_en %></div>
+        <% } %>
+      </div>
+      <div class="card-meta">
+        <%= new Date(post.created_at).toLocaleDateString('zh-CN') %>
+      </div>
+    </div>
+
+    <% if (post.excerpt) { %>
+    <p class="card-excerpt"><%= post.excerpt %></p>
+    <% } %>
+
+    <div class="card-footer">
+      <% if (post.tags && post.tags.length > 0) { %>
+      <div class="card-tags">
+        <% post.tags.slice(0, 3).forEach(tag => { %>
+        <span class="tag"><%= tag %></span>
+        <% }) %>
+      </div>
+      <% } %>
+      <a href="/post/<%= post.slug %>" class="card-link">READ →</a>
+    </div>
+  </article>
+  <% }) %>
+</div>
+<% } %>
+
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> — 夏祭</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <% if (nMark) { %>
+  <div class="n-marker">N</div>
+  <% } %>
+
+  <% if (typeof wide !== 'undefined' && wide) { %>
+  <div class="container-wide">
+  <% } else { %>
+  <div class="container">
+  <% } %>

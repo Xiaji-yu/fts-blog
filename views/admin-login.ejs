@@ -1,0 +1,49 @@
+<%- include('partials/header', { title: title }) %>
+
+<div class="title-block">
+  <h1 class="main-title">管理后台</h1>
+  <p class="sub-title-en">Admin Panel · Authentication Required</p>
+</div>
+
+<hr class="divider">
+
+<div class="spec-block">
+  <p><span class="label">系统</span> <strong>FTS-ADMIN</strong> · 权限级别 <strong>ADMIN</strong></p>
+</div>
+
+<% if (typeof error !== 'undefined') { %>
+<div class="stamp" style="transform: rotate(-1deg); margin: var(--spacing-md) auto;">
+  错误 · ERROR
+</div>
+<div class="description" style="color: var(--accent);">
+  <%= error %>
+</div>
+<% } else { %>
+<div class="stamp" style="transform: rotate(-2deg); margin: var(--spacing-md) auto;">
+  AUTHENTICATE
+</div>
+<% } %>
+
+<div class="description" style="max-width: 400px; margin: var(--spacing-lg) auto;">
+  <p style="margin-bottom: var(--spacing-md);">
+    请输入管理员凭证以访问控制系统。
+  </p>
+
+  <form method="POST" action="/admin/login">
+    <div class="form-group">
+      <label class="form-label">用户名 · Username</label>
+      <input type="text" name="username" class="form-input" required autofocus>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">密码 · Password</label>
+      <input type="password" name="password" class="form-input" required>
+    </div>
+
+    <button type="submit" class="btn" style="width: 100%; justify-content: center;">
+      登录 · LOGIN →
+    </button>
+  </form>
+</div>
+
+<%- include('partials/footer') %>

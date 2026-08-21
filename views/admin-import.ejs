@@ -1,0 +1,403 @@
+<%- include('partials/header', { title: title }) %>
+
+<div class="nav">
+  <a href="/admin" class="nav-brand">FTS-ADMIN</a>
+  <div>
+    <a href="/" class="btn btn-outline btn-sm">← 主页 · HOME</a>
+    &nbsp;&nbsp;
+    <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);">
+      用户: <strong><%= username %></strong>
+    </span>
+    &nbsp;&nbsp;
+    <form method="POST" action="/admin/logout" style="display: inline;">
+      <button type="submit" class="btn btn-outline btn-sm">登出</button>
+    </form>
+  </div>
+</div>
+
+<div class="title-block" style="padding-top: 0;">
+  <h1 class="main-title">Obsidian 导入</h1>
+  <p class="sub-title-en">Import from Obsidian Vault</p>
+</div>
+
+<hr class="divider">
+
+<div class="spec-block">
+  <p><span class="label">操作</span> <strong>IMPORT</strong> · 支持 .md 文件批量导入</p>
+</div>
+
+<div class="description" style="text-align: left; max-width: 800px;">
+  <p style="margin-bottom: var(--spacing-md);">
+    从 Obsidian 笔记库批量导入 Markdown 文件。系统会自动解析 YAML frontmatter、转换 wiki 链接 [[]] 和嵌入语法。
+  </p>
+
+  <div style="background: var(--bg-card); border: 1px solid var(--border); padding: var(--spacing-md); margin-bottom: var(--spacing-md);">
+    <h3 style="font-family: var(--font-mono); font-size: 0.85rem; letter-spacing: 0.08em; margin-bottom: var(--spacing-sm); color: var(--fg);">
+      支持的功能 · Supported Features
+    </h3>
+    <ul style="color: var(--fg-dim); line-height: 1.9; padding-left: var(--spacing-md);">
+      <li>YAML frontmatter 解析 (title, date, tags, description 等)</li>
+      <li>Wiki 链接转换 [[Link]] → [Link](/post/slug)</li>
+      <li>图片嵌入 ![[image.png]] → 自动引用</li>
+      <li>Callout 语法转换 > [!note] → 引用块</li>
+      <li>标签自动提取并创建 (支持数组和字符串格式)</li>
+      <li>表格自动转义管道符</li>
+      <li>批量导入多个文件</li>
+    </ul>
+  </div>
+
+  <div style="background: var(--bg-card); border: 1px solid var(--border); padding: var(--spacing-md); margin-bottom: var(--spacing-md); text-align: center;">
+    <p style="color: var(--fg-dim); margin-bottom: var(--spacing-sm);">
+      从 <strong>经验/</strong> 目录批量导入所有 .md 文件（跳过已导入的）
+    </p>
+    <button id="scanBtn" class="btn btn-outline">
+      扫描经验目录 · SCAN & IMPORT
+    </button>
+  </div>
+
+  <div class="upload-zone" id="dropZone">
+    <p style="font-family: var(--font-mono); font-size: 0.9rem; letter-spacing: 0.06em; color: var(--fg-dim); margin-bottom: var(--spacing-sm);">
+      拖拽 .md 文件到此处 · 或点击选择文件
+    </p>
+    <p style="font-size: 0.8rem; color: var(--muted);">
+      支持单个或多个 Markdown 文件
+    </p>
+    <input type="file" id="fileInput" multiple accept=".md" style="display: none;">
+  </div>
+
+  <div id="fileList" style="margin: var(--spacing-md) 0;"></div>
+
+  <div id="importStatus" style="display: none; margin: var(--spacing-md) 0; padding: var(--spacing-md); border: 1px solid var(--border); background: var(--bg-card);">
+  </div>
+
+  <button id="importBtn" class="btn" disabled style="width: 100%; justify-content: center; margin-top: var(--spacing-md);">
+    开始导入 · START IMPORT →
+  </button>
+
+  <div style="margin-top: var(--spacing-lg); padding-top: var(--spacing-md); border-top: 1px solid var(--border);">
+    <h3 style="font-family: var(--font-mono); font-size: 0.85rem; letter-spacing: 0.08em; margin-bottom: var(--spacing-sm); color: var(--fg);">
+      Obsidian 文件示例 · Example Obsidian File
+    </h3>
+    <pre style="background: var(--bg-card); border: 1px solid var(--border); padding: var(--spacing-md); overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6; color: var(--fg-dim);"><code>---
+title: 前端技术笔记
+date: 2026-08-18
+tags: [前端, JavaScript, CSS]
+description: 从 Obsidian 导入的前端技术笔记
+---
+
+# 前端技术笔记
+
+这是一篇从 Obsidian 导入的示例笔记。
+
+## 学习资源
+
+- [[JavaScript 高级程序设计]]
+- [[CSS 权威指南]]
+
+## 重要概念
+
+> [!note] 提示
+> 这是一条重要的技术提示。
+
+## 代码示例
+
+```javascript
+const greet = (name) => {
+  return `Hello, ${name}!`;
+};
+```
+
+## 相关笔记
+
+- [[React 学习笔记]]
+- [[Vue3 组合式 API]]</code></pre>
+  </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const fileList = document.getElementById('fileList');
+const importBtn = document.getElementById('importBtn');
+const statusDiv = document.getElementById('importStatus');
+let selectedFiles = [];
+
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => handleFiles(Array.from(e.target.files)));
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  handleFiles(Array.from(e.dataTransfer.files));
+});
+
+function handleFiles(files) {
+  selectedFiles = files.filter(f => f.name.endsWith('.md'));
+  if (selectedFiles.length === 0) {
+    fileList.innerHTML = '<p style="color: var(--accent);">请选择 .md 文件</p>';
+    importBtn.disabled = true;
+    return;
+  }
+  fileList.innerHTML = selectedFiles.map(f =>
+    `<div style="padding: 0.5rem 0; font-family: var(--font-mono); font-size: 0.85rem; color: var(--fg-dim);">📄 ${f.name}</div>`
+  ).join('');
+  importBtn.disabled = false;
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+function parseFrontmatter(content) {
+  const lines = content.split('\n');
+
+  // First line must be exactly ---
+  if (lines[0].trim() !== '---') {
+    return { frontmatter: {}, content: content };
+  }
+
+  // Find closing --- on its own line
+  let endIndex = -1;
+  for (let i = 1; i < lines.length; i++) {
+    if (/^---\s*$/.test(lines[i])) {
+      endIndex = i;
+      break;
+    }
+  }
+
+  if (endIndex === -1) {
+    return { frontmatter: {}, content: content };
+  }
+
+  const frontmatterText = lines.slice(1, endIndex).join('\n').trim();
+  const markdownContent = lines.slice(endIndex + 1).join('\n');
+
+  // Simple YAML key:value parser
+  const frontmatter = {};
+  const fmLines = frontmatterText.split('\n');
+  let currentKey = null;
+
+  for (const line of fmLines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const kvMatch = trimmed.match(/^([^\s:]+):\s*(.+)?$/);
+    if (kvMatch) {
+      const key = kvMatch[1];
+      const rawValue = kvMatch[2] ? kvMatch[2].trim() : '';
+
+      if (rawValue.startsWith('[') && rawValue.endsWith(']')) {
+        frontmatter[key] = rawValue.slice(1, -1).split(',').map(v => v.trim()).filter(v => v);
+        currentKey = null;
+      } else if ((rawValue.startsWith('"') && rawValue.endsWith('"')) || (rawValue.startsWith("'") && rawValue.endsWith("'"))) {
+        frontmatter[key] = rawValue.slice(1, -1);
+        currentKey = null;
+      } else {
+        frontmatter[key] = rawValue;
+        currentKey = key;
+      }
+    } else if (trimmed.startsWith('- ') && currentKey) {
+      const item = trimmed.slice(2).trim();
+      if (!Array.isArray(frontmatter[currentKey])) {
+        frontmatter[currentKey] = [];
+      }
+      frontmatter[currentKey].push(item);
+    }
+  }
+
+  return { frontmatter, content: markdownContent };
+}
+
+function convertObsidianSyntax(content) {
+  const lines = content.split('\n');
+  const result = [];
+  let inCallout = false;
+  let calloutLines = [];
+
+  const iconMap = {
+    'note': 'ℹ️', 'info': 'ℹ️',
+    'warning': '⚠️', 'danger': '🚨',
+    'tip': '💡', 'important': '❗',
+    'question': '❓'
+  };
+
+  // Browser-compatible extname (no Node.js path module)
+  function getExt(filename) {
+    const dotIdx = filename.lastIndexOf('.');
+    return dotIdx >= 0 ? filename.slice(dotIdx).toLowerCase() : '';
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const calloutMatch = line.match(/^>\s*\[!(\w+)\]\s*(.*)$/);
+
+    if (calloutMatch) {
+      inCallout = true;
+      const type = calloutMatch[1].toUpperCase();
+      const icon = iconMap[calloutMatch[1].toLowerCase()] || '📝';
+      const firstText = calloutMatch[2].trim();
+      calloutLines = firstText ? [`> ${icon} **${type}** ${firstText}`] : [`> ${icon} **${type}**`];
+      continue;
+    }
+
+    if (inCallout) {
+      if (line.startsWith('>') || line.trim() === '') {
+        calloutLines.push(line.trim() === '' ? '>' : line);
+        continue;
+      } else {
+        inCallout = false;
+        result.push(...calloutLines);
+        result.push('');
+        calloutLines = [];
+      }
+    }
+
+    // Table row: escape pipes inside cells
+    const trimmed = line.trim();
+    const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|');
+    const isTableSep = /^\|?[\s\-:]+\|[\s\-:]+\|?$/.test(trimmed);
+
+    if (isTableRow && !isTableSep) {
+      const parts = trimmed.split('|');
+      const escaped = parts.map(p => p.replace(/\\\|/g, '|').replace(/\|/g, '\\|')).join('|');
+      result.push(escaped);
+      continue;
+    }
+
+    // Step 1: Embeds ![[file]] - must come before wiki links
+    let processed = line.replace(/!\[\[([^\]]+)\]\]/g, (match, file) => {
+      const ext = getExt(file);
+      if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) {
+        return `![${file}](/uploads/${file})`;
+      }
+      return `[${file}](/uploads/${file})`;
+    });
+
+    // Step 2: Wiki links [[Link]] or [[Link|Alias]]
+    processed = processed.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, link, alias) => {
+      const text = alias || link;
+      const slug = link.toLowerCase().replace(/[^a-z0-9一-龥]+/g, '-').replace(/^-+|-+$/g, '');
+      return `[${text}](/post/${slug})`;
+    });
+
+    result.push(processed);
+  }
+
+  if (inCallout) result.push(...calloutLines);
+  return result.join('\n');
+}
+
+// Scan & Import button
+const scanBtn = document.getElementById('scanBtn');
+if (scanBtn) {
+  scanBtn.addEventListener('click', async () => {
+    scanBtn.disabled = true;
+    scanBtn.textContent = '扫描中... · SCANNING...';
+    statusDiv.style.display = 'block';
+    statusDiv.innerHTML = '<p style="color: var(--fg-dim);">正在扫描 经验/ 目录...</p>';
+
+    try {
+      const response = await fetch('/admin/import/directory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        let html = `
+          <p style="color: var(--fg); margin-bottom: 0.5rem;"><strong>扫描完成</strong></p>
+          <p style="color: var(--fg-dim); font-size: 0.9rem;">
+            成功导入: <strong>${result.imported}</strong> 篇<br>
+            失败: <strong>${result.failed}</strong> 篇
+          </p>
+        `;
+
+        if (result.details.imported.length > 0) {
+          html += '<div style="margin-top: 1rem;"><strong style="font-size: 0.85rem; color: var(--fg);">导入的文章:</strong><ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: var(--fg-dim);">';
+          html += result.details.imported.map(f => `<li>${f.title} (${f.slug})</li>`).join('');
+          html += '</ul></div>';
+        }
+
+        if (result.details.failed.length > 0) {
+          html += '<div style="margin-top: 1rem;"><strong style="font-size: 0.85rem; color: var(--accent);">失败的文件:</strong><ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: var(--accent);">';
+          html += result.details.failed.map(f => `<li>${f.filename}: ${f.error}</li>`).join('');
+          html += '</ul></div>';
+        }
+
+        html += '<a href="/admin" class="btn btn-outline btn-sm" style="margin-top: 1rem; display: inline-flex;">→ 返回管理后台</a>';
+        statusDiv.innerHTML = html;
+      } else {
+        statusDiv.innerHTML = `<p style="color: var(--accent);">错误: ${result.error}</p>`;
+      }
+    } catch (err) {
+      statusDiv.innerHTML = `<p style="color: var(--accent);">扫描失败: ${err.message}</p>`;
+    } finally {
+      scanBtn.disabled = false;
+      scanBtn.textContent = '扫描经验目录 · SCAN & IMPORT';
+    }
+  });
+}
+
+// Import button
+importBtn.addEventListener('click', async () => {
+  if (selectedFiles.length === 0) return;
+
+  importBtn.disabled = true;
+  importBtn.textContent = '导入中... · IMPORTING...';
+  const statusDiv = document.getElementById('importStatus');
+  statusDiv.style.display = 'block';
+  statusDiv.innerHTML = '<p style="color: var(--fg-dim);">正在处理文件...</p>';
+
+  const files = [];
+  for (const file of selectedFiles) {
+    const rawContent = await readFileAsText(file);
+    const { frontmatter, content: markdown } = parseFrontmatter(rawContent);
+    const converted = convertObsidianSyntax(markdown);
+
+    files.push({
+      filename: file.name,
+      content: converted,
+      frontmatter: frontmatter
+    });
+  }
+
+  try {
+    const response = await fetch('/admin/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files, options: {} })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      statusDiv.innerHTML = `
+        <p style="color: var(--fg); margin-bottom: 0.5rem;"><strong>✓ 导入完成</strong></p>
+        <p style="color: var(--fg-dim); font-size: 0.9rem;">
+          成功导入: <strong>${result.imported}</strong> 篇<br>
+          失败: <strong>${result.failed}</strong> 篇
+        </p>
+        ${result.details.imported.length > 0 ? '<div style="margin-top: 1rem;"><strong style="font-size: 0.85rem; color: var(--fg);">导入的文章:</strong><ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: var(--fg-dim);">' + result.details.imported.map(f => `<li>${f.title} (${f.slug})</li>`).join('') + '</ul></div>' : ''}
+        ${result.details.failed.length > 0 ? '<div style="margin-top: 1rem;"><strong style="font-size: 0.85rem; color: var(--accent);">失败的文件:</strong><ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: var(--accent);">' + result.details.failed.map(f => `<li>${f.filename}: ${f.error}</li>`).join('') + '</ul></div>' : ''}
+        <a href="/admin" class="btn btn-outline btn-sm" style="margin-top: 1rem; display: inline-flex;">→ 返回管理后台</a>
+      `;
+    } else {
+      statusDiv.innerHTML = `<p style="color: var(--accent);">错误: ${result.error}</p>`;
+    }
+  } catch (err) {
+    statusDiv.innerHTML = `<p style="color: var(--accent);">导入失败: ${err.message}</p>`;
+  } finally {
+    importBtn.disabled = false;
+    importBtn.textContent = '开始导入 · START IMPORT →';
+  }
+});
+</script>
+
+<%- include('partials/footer') %>
