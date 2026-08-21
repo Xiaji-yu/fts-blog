@@ -6,17 +6,40 @@
 
 ## 🚀 快速开始
 
+### 本地开发
+
 ```bash
 # 安装依赖
 npm install
 
-# 启动服务器
+# 启动服务器（前台运行）
 node server.js
 
 # 访问
 # 主页: http://localhost:3000
 # 管理后台: http://localhost:3000/admin
 # API 文档: http://localhost:3000/api
+```
+
+### 生产环境（PM2）
+
+```bash
+# 安装 PM2（全局）
+npm install -g pm2
+
+# 启动博客（后台守护进程）
+pm2 start server.js --name blog
+
+# 设置开机自启
+pm2 startup
+pm2 save
+
+# 常用命令
+pm2 status              # 查看进程状态
+pm2 logs blog           # 查看日志
+pm2 restart blog        # 重启
+pm2 stop blog           # 停止
+pm2 delete blog         # 删除进程
 ```
 
 ## 🔐 管理员凭证
