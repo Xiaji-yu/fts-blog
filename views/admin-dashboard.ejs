@@ -152,7 +152,12 @@ async function changePassword(e) {
     if (response.ok) {
       alert('密码修改成功 · Password updated successfully\n请使用新密码重新登录 · Please log in with your new password');
       closePasswordModal();
-      window.location.href = '/admin/logout';
+      // POST logout (CSRF-protected), then back to the login page.
+      await fetch('/admin/logout', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content }
+      });
+      window.location.href = '/admin/login';
     } else {
       errorEl.textContent = data.error || 'Password change failed';
       errorEl.style.display = 'block';

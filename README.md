@@ -48,6 +48,9 @@ pm2 startup && pm2 save
 
 > **建议**: 在 `ecosystem.config.js` 的 `env` 中设置一个随机 `SESSION_SECRET`，
 > 未设置时会自动生成并持久化到 `data/.session-secret`（跨重启保持登录态）。
+>
+> **反向代理**: 若博客位于 Nginx 等反向代理之后，务必设置 `TRUST_PROXY=1`
+> （`ecosystem.config.js` 已默认配置），否则登录限流会按代理 IP 全局生效。
 
 ## ⚙️ 个性化配置
 
@@ -138,10 +141,12 @@ cp config.example.json config.json
 - `POST /api/upload` - 上传图片
 - `GET /api/uploads` - 图片列表
 - `DELETE /api/uploads/:filename` - 删除图片
-- `GET /api/import/status` - 导入统计
+- `GET /admin/import/status` - 导入统计（管理端）
 
 > 除登录外的所有写操作都要求 CSRF Token：表单以 `_csrf` 字段提交，
 > fetch 请求以 `X-CSRF-Token` 请求头发送（页面 `<meta name="csrf-token">` 中获取）。
+> 编程方式调用 API 时，令牌来自 `POST /api/auth/login` 响应中的 `csrfToken` 字段，
+> 或 `GET /api/auth/csrf`（同一会话）。登录接口受速率限制保护，无需 CSRF。
 
 ## 🎨 设计特点
 

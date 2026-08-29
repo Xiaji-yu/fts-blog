@@ -147,10 +147,19 @@ const defaults = {
     secretLength: 64,
     resave: false,
     saveUninitialized: false,
-    cookieSecure: false,
+    cookieSecure: null,
     cookieHttpOnly: true,
     cookieSameSite: "lax",
     maxAgeHours: 24
+  },
+  server: {
+    port: 3000,
+    publicUrl: "http://localhost:3000",
+    adminUrl: "http://localhost:3000/admin",
+    apiUrl: "http://localhost:3000/api",
+    jsonBodyLimit: "10mb",
+    urlEncodedBodyLimit: "10mb",
+    trustProxy: false
   },
   upload: {
     directory: "uploads",

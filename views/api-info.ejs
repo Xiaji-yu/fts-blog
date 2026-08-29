@@ -97,8 +97,18 @@
   <div class="spec-block" style="text-align: left;">
     <p>管理接口需要 session-based 认证。</p>
     <p style="margin-top: 0.5rem;">
-      登录凭证: <strong>POST /api/auth/login</strong><br>
-      请求体: <code style="font-family: var(--font-mono);">{ "username": "<%= config.admin.defaultUsername %>", "password": "YOUR_PASSWORD" }</code>
+      1. 登录: <strong>POST /api/auth/login</strong><br>
+      请求体: <code style="font-family: var(--font-mono);">{ "username": "<%= config.admin.defaultUsername %>", "password": "YOUR_PASSWORD" }</code><br>
+      响应: <code style="font-family: var(--font-mono);">{ "message": "...", "user": {...}, "csrfToken": "..." }</code>
+    </p>
+    <p style="margin-top: 0.5rem;">
+      2. 所有写操作（POST/PUT/DELETE）除登录外，都必须在请求头携带 CSRF 令牌:<br>
+      <code style="font-family: var(--font-mono);">X-CSRF-Token: &lt;csrfToken&gt;</code><br>
+      令牌来自登录响应中的 <code style="font-family: var(--font-mono);">csrfToken</code> 字段，
+      或 <strong>GET /api/auth/csrf</strong>（需要同一会话 cookie）。
+    </p>
+    <p style="margin-top: 0.5rem; color: var(--muted);">
+      浏览器表单场景使用隐藏字段 <code style="font-family: var(--font-mono);">_csrf</code> 提交亦可。
     </p>
   </div>
 
@@ -107,12 +117,18 @@
   </h2>
 
   <div class="spec-block" style="text-align: left; background: var(--bg-alt); padding: var(--spacing-md); border: 1px solid var(--border);">
-    <p style="margin-bottom: 0.5rem;"># 获取所有文章</p>
+    <p style="margin-bottom: 0.5rem;"># 1. 获取所有文章（公开）</p>
     <p>curl <%= config.api.baseUrl.replace(/\/api$/, '') %>/api/posts</p>
     <br>
-    <p style="margin-bottom: 0.5rem;"># 创建新文章</p>
-    <p>curl -X POST <%= config.api.baseUrl.replace(/\/api$/, '') %>/api/posts \<br>
+    <p style="margin-bottom: 0.5rem;"># 2. 登录并保存 Cookie 与 CSRF 令牌</p>
+    <p>curl -c cookies.txt -X POST <%= config.api.baseUrl %>/auth/login \<br>
     &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+    &nbsp;&nbsp;-d '{"username":"<%= config.admin.defaultUsername %>","password":"YOUR_PASSWORD"}'</p>
+    <br>
+    <p style="margin-bottom: 0.5rem;"># 3. 创建新文章（携带 Cookie + CSRF 头）</p>
+    <p>curl -b cookies.txt -X POST <%= config.api.baseUrl %>/posts \<br>
+    &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+    &nbsp;&nbsp;-H "X-CSRF-Token: &lt;上一步响应中的 csrfToken&gt;" \<br>
     &nbsp;&nbsp;-d '{"title":"测试","slug":"test","content":"内容"}'</p>
   </div>
 

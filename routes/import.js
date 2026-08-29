@@ -61,6 +61,14 @@ async function insertPostWithTags(tx, { title, titleEn, slug, content, excerpt, 
   return postId;
 }
 
+// Sanitize errors before exposing them to the admin UI (never leak SQLite internals).
+function sanitizeImportError(message) {
+  if (/UNIQUE constraint failed/i.test(message || '')) {
+    return 'duplicate slug（该文章已存在，跳过）';
+  }
+  return String(message || 'Unknown error').slice(0, 200);
+}
+
 // POST /admin/import/directory - Scan 经验/ folder and import all .md files
 router.post('/import/directory', requireAuthView, async (req, res) => {
   try {
@@ -135,7 +143,7 @@ router.post('/import/directory', requireAuthView, async (req, res) => {
           });
           imported.push({ filename, title, slug });
         } catch (err) {
-          failed.push({ filename, error: err.message });
+          failed.push({ filename, error: sanitizeImportError(err.message) });
         }
       }
       return { imported, failed };
@@ -190,12 +198,19 @@ router.post('/import', requireAuthView, async (req, res) => {
 
           const convertedContent = convertObsidianSyntax(markdownContent, slugToIdMap);
 
+          // Skip if post with this slug already exists (idempotent re-import)
+          const existing = tx.exec('SELECT id FROM posts WHERE slug = ?', [slug]);
+          if (existing.length > 0 && existing[0].values.length > 0) {
+            imported.push({ filename, title, slug, skipped: true });
+            continue;
+          }
+
           await insertPostWithTags(tx, {
             title, titleEn, slug, content: convertedContent, excerpt, tags: mergedFrontmatter.tags
           });
           imported.push({ filename, title, slug });
         } catch (err) {
-          failed.push({ filename: file.filename, error: err.message });
+          failed.push({ filename: file.filename, error: sanitizeImportError(err.message) });
         }
       }
       return { imported, failed };

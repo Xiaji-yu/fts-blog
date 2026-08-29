@@ -5,10 +5,13 @@ import paramiko
 import sys
 import time
 
+import os
+if not os.path.exists('deploy_config.py'):
+    raise SystemExit('Missing deploy_config.py — copy deploy_config.example.py to deploy_config.py and fill in credentials.')
 try:
     from deploy_config import HOST, USER, PASS, ROOT_PASS
-except ImportError:
-    raise SystemExit('Missing deploy_config.py — copy deploy_config.example.py to deploy_config.py and fill in credentials.')
+except ImportError as e:
+    raise SystemExit('deploy_config.py exists but is missing HOST/USER/PASS/ROOT_PASS — add the missing variable(s) and retry.') from e
 
 def ssh_exec(client, cmd):
     stdin, stdout, stderr = client.exec_command(cmd)

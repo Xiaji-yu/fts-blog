@@ -38,9 +38,12 @@ async function seedIfEmpty() {
     const count = countResult[0] ? countResult[0].values[0][0] : 0;
     if (count > 0) return { seeded: 0, skipped: true };
 
-    const now = new Date().toISOString();
+    const baseTime = Date.now();
     let seeded = 0;
-    for (const post of samplePosts) {
+    for (let i = 0; i < samplePosts.length; i++) {
+      const post = samplePosts[i];
+      // Stagger timestamps so ordering (and prev/next navigation) is stable.
+      const now = new Date(baseTime - (samplePosts.length - i) * 1000).toISOString();
       tx.run(
         `INSERT INTO posts (title, title_en, slug, content, excerpt, published, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,

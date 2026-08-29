@@ -4,6 +4,7 @@ const router = express.Router();
 const config = require('../config/loader');
 const db = require('../database/db');
 const cache = require('../lib/cache');
+const viewCounter = require('../lib/viewCounter');
 
 const BASE_URL = (config.site.url || config.server.publicUrl || 'http://localhost:3000').replace(/\/+$/, '');
 
@@ -91,7 +92,7 @@ function toRfc822(dateStr) {
 // GET / - Homepage (paginated)
 router.get('/', async (req, res) => {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = config.pagination.defaultLimit;
     const cacheKey = `homepage:${page}`;
 
@@ -145,17 +146,17 @@ router.get('/post/:id', async (req, res) => {
     const wordCount = row[4] ? row[4].length : 0;
     const readTime = Math.max(1, Math.ceil(wordCount / (config.site.readingTimeCharsPerMinute || 200)));
 
-    // View counter
-    await db.run('UPDATE posts SET view_count = view_count + 1 WHERE id = ?', [row[0]]);
+    // View counter (debounced, batched — not a full-file write per view)
+    viewCounter.increment(row[0]);
 
-    // Previous / next navigation (older / newer by created_at)
+    // Previous / next navigation (older / newer by created_at, id as tiebreaker)
     const prevResult = await db.exec(
-      'SELECT id, title FROM posts WHERE published = 1 AND created_at < ? ORDER BY created_at DESC LIMIT 1',
-      [row[8]]
+      'SELECT id, title FROM posts WHERE published = 1 AND (created_at < ? OR (created_at = ? AND id < ?)) ORDER BY created_at DESC, id DESC LIMIT 1',
+      [row[8], row[8], row[0]]
     );
     const nextResult = await db.exec(
-      'SELECT id, title FROM posts WHERE published = 1 AND created_at > ? ORDER BY created_at ASC LIMIT 1',
-      [row[8]]
+      'SELECT id, title FROM posts WHERE published = 1 AND (created_at > ? OR (created_at = ? AND id > ?)) ORDER BY created_at ASC, id ASC LIMIT 1',
+      [row[8], row[8], row[0]]
     );
     const prevPost = prevResult.length > 0 ? { id: prevResult[0].values[0][0], title: prevResult[0].values[0][1] } : null;
     const nextPost = nextResult.length > 0 ? { id: nextResult[0].values[0][0], title: nextResult[0].values[0][1] } : null;
@@ -218,7 +219,8 @@ router.get('/tags', async (req, res) => {
 // GET /tag/:name - Posts for a tag
 router.get('/tag/:name', async (req, res) => {
   try {
-    const name = decodeURIComponent(req.params.name);
+    // Express already decodes the route param once; do not decode again.
+    const name = req.params.name;
     const [posts, total] = await Promise.all([
       fetchPublishedPosts({ tag: name, limit: 100 }),
       countPublished({ tag: name })

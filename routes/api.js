@@ -27,13 +27,16 @@ const storage = multer.diskStorage({
   }
 });
 
-const allowedTypesRegex = new RegExp(config.upload.allowedTypes.join('|'));
+const allowedTypes = config.upload.allowedTypes.join('|');
+// Anchored patterns: extension like ".jpeg" and mimetype like "image/jpeg".
+const extRegex = new RegExp(`^\\.(${allowedTypes})$`, 'i');
+const mimeRegex = new RegExp(`^image/(${allowedTypes})$`, 'i');
 
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
-    const extname = allowedTypesRegex.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypesRegex.test(file.mimetype);
+    const extname = extRegex.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = mimeRegex.test(file.mimetype.toLowerCase());
     if (extname && mimetype) return cb(null, true);
     cb(new Error('Only image files are allowed'));
   },
@@ -90,16 +93,26 @@ router.post('/auth/login', loginLimiter, async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Ensure a CSRF token exists so subsequent API mutations can be validated.
-    generateToken(req);
+    // Regenerate the session (defeats session fixation) and mint a fresh
+    // CSRF token for the authenticated session. The token is returned so
+    // programmatic clients can use the admin API.
+    await new Promise((resolve, reject) => {
+      req.session.regenerate((err) => (err ? reject(err) : resolve()));
+    });
     req.session.userId = userId;
     req.session.username = username;
+    const csrfToken = generateToken(req);
 
-    res.json({ message: 'Login successful', user: { id: userId, username } });
+    res.json({ message: 'Login successful', user: { id: userId, username }, csrfToken });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });
   }
+});
+
+// GET /api/auth/csrf - Obtain a CSRF token for the current session
+router.get('/auth/csrf', (req, res) => {
+  res.json({ csrfToken: generateToken(req) });
 });
 
 // Everything below requires CSRF for non-safe methods.
@@ -118,8 +131,8 @@ router.post('/auth/logout', (req, res) => {
 // GET /api/posts - List all published posts (paginated)
 router.get('/posts', async (req, res) => {
   try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || config.pagination.defaultLimit;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || config.pagination.defaultLimit));
     const offset = (page - 1) * limit;
 
     const result = await db.exec(
@@ -234,9 +247,16 @@ router.post('/posts', requireAuth, async (req, res) => {
     res.status(201).json({ message: 'Post created', id: postId });
   } catch (err) {
     console.error('Create post error:', err);
-    res.status(500).json({ error: 'Server error: ' + err.message });
+    if (isUniqueViolation(err)) {
+      return res.status(409).json({ error: 'Slug 已存在 · A post with this slug already exists' });
+    }
+    res.status(500).json({ error: 'Server error' });
   }
 });
+
+function isUniqueViolation(err) {
+  return err && /UNIQUE constraint failed/i.test(err.message || '');
+}
 
 async function insertTags(tx, postId, tagList) {
   for (const tagName of tagList) {
@@ -278,7 +298,10 @@ router.put('/posts/:id', requireAuth, async (req, res) => {
     res.json({ message: 'Post updated' });
   } catch (err) {
     console.error('Update post error:', err);
-    res.status(500).json({ error: 'Server error: ' + err.message });
+    if (isUniqueViolation(err)) {
+      return res.status(409).json({ error: 'Slug 已存在 · A post with this slug already exists' });
+    }
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -299,7 +322,7 @@ router.delete('/posts/:id', requireAuth, async (req, res) => {
 
 // ===== TAG ROUTES =====
 
-// GET /api/tags - List all tags
+// GET /api/tags - List all tags (published posts only, with counts)
 router.get('/tags', async (req, res) => {
   try {
     const result = await db.exec(
@@ -307,6 +330,7 @@ router.get('/tags', async (req, res) => {
        FROM tags t
        LEFT JOIN post_tags pt ON t.id = pt.tag_id
        LEFT JOIN posts p ON pt.post_id = p.id AND p.published = 1
+       WHERE p.id IS NOT NULL
        GROUP BY t.id
        ORDER BY post_count DESC, t.name`
     );
@@ -352,7 +376,7 @@ router.post('/upload', requireAuth, upload.single('image'), (req, res) => {
 router.get('/uploads', requireAuth, (req, res) => {
   try {
     const files = fs.readdirSync(UPLOAD_DIR)
-      .filter((f) => allowedTypesRegex.test(path.extname(f).toLowerCase()))
+      .filter((f) => extRegex.test(path.extname(f).toLowerCase()))
       .map((name) => {
         const stat = fs.statSync(path.join(UPLOAD_DIR, name));
         return { name, size: stat.size, mtime: stat.mtime.toISOString(), url: '/uploads/' + name };

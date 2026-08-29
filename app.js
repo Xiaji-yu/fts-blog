@@ -107,7 +107,19 @@ function loadOrCreateSessionSecret() {
   return generated;
 }
 
+// Trust reverse-proxy headers when configured (required for per-client rate
+// limiting behind Nginx). Set config.server.trustProxy (or env TRUST_PROXY)
+// to the number of proxy hops, e.g. 1.
+if (process.env.TRUST_PROXY || config.server.trustProxy) {
+  const hops = Number(process.env.TRUST_PROXY || config.server.trustProxy);
+  app.set('trust proxy', Number.isInteger(hops) && hops > 0 ? hops : 1);
+}
+
 const sessionSecret = process.env.SESSION_SECRET || config.session.secret || loadOrCreateSessionSecret();
+
+if (process.env.NODE_ENV === 'production' && config.session.cookieSecure !== true) {
+  console.warn('⚠ [security] NODE_ENV=production but session.cookieSecure is not true — session cookie is sent without the Secure flag over HTTP. Set session.cookieSecure=true in config.json (or run behind HTTPS).');
+}
 
 app.use(session({
   secret: sessionSecret,

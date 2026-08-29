@@ -2,7 +2,8 @@
 /**
  * Lightweight CSRF protection (synchronizer token pattern).
  * - A token is generated once per session and exposed to templates via
- *   res.locals.csrfToken (also available as a meta tag in views).
+ *   res.locals.csrfToken (also available as a meta tag in views) and returned
+ *   by POST /api/auth/login for programmatic clients.
  * - Non-safe methods must send it back either as a form field `_csrf` or the
  *   `X-CSRF-Token` header.
  * - Login endpoints are exempt (protected by rate limiting instead) so API
@@ -26,6 +27,13 @@ function attachCsrf(req, res, next) {
   next();
 }
 
+function tokensEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 // Enforce CSRF on non-safe methods for the mounted router.
 function csrfProtect(req, res, next) {
   if (SAFE_METHODS.has(req.method)) return next();
@@ -36,9 +44,10 @@ function csrfProtect(req, res, next) {
     : (req.headers['x-csrf-token'] || '');
   const expected = req.session && req.session.csrfToken;
 
-  if (!expected || !sent || sent !== expected) {
+  if (!expected || !sent || !tokensEqual(sent, expected)) {
     const message = 'CSRF token missing or invalid. Refresh the page and try again.';
-    if (req.path.startsWith('/api/')) {
+    // req.path is router-relative here; baseUrl tells us which mount we are in.
+    if ((req.baseUrl || '').startsWith('/api')) {
       return res.status(403).json({ error: message });
     }
     return res.status(403).send(message);

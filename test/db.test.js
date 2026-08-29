@@ -3,7 +3,9 @@
 const path = require('path');
 const fs = require('fs');
 
-process.env.FTS_DB_PATH = path.join(__dirname, '.tmp', 'db-test-' + process.pid + '.db');
+// Own subdirectory: node --test runs files in parallel, so this file must not
+// share its temp dir with api.test.js (each after() removes its own dir).
+process.env.FTS_DB_PATH = path.join(__dirname, '.tmp', 'db', 'test-' + process.pid + '.db');
 
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');

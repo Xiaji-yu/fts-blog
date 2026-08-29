@@ -60,9 +60,14 @@ router.post('/login', loginLimiter, async (req, res) => {
       return renderError('Invalid credentials');
     }
 
-    generateToken(req);
+    // Regenerate the session and rotate the CSRF token on successful login
+    // (defeats session fixation).
+    await new Promise((resolve, reject) => {
+      req.session.regenerate((err) => (err ? reject(err) : resolve()));
+    });
     req.session.userId = userId;
     req.session.username = username;
+    generateToken(req);
 
     res.redirect('/admin');
   } catch (err) {

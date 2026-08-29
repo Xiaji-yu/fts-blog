@@ -9,7 +9,9 @@ module.exports = {
       exec_mode: 'fork',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000
+        PORT: 3000,
+        // Trust 1 reverse-proxy hop so rate limits are keyed per real client.
+        TRUST_PROXY: '1'
         // SESSION_SECRET: 'set-a-long-random-string-here'
       },
       max_memory_restart: '256M',

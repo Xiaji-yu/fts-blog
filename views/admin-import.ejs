@@ -10,6 +10,7 @@
     </span>
     &nbsp;&nbsp;
     <form method="POST" action="/admin/logout" style="display: inline;">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <button type="submit" class="btn btn-outline btn-sm">登出</button>
     </form>
   </div>
@@ -115,6 +116,13 @@ const greet = (name) => {
 </div>
 
 <script>
+// Escape values before interpolating into innerHTML (filenames come from disk).
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
+
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const fileList = document.getElementById('fileList');
@@ -324,13 +332,13 @@ if (scanBtn) {
 
         if (result.details.imported.length > 0) {
           html += '<div style="margin-top: 1rem;"><strong style="font-size: 0.85rem; color: var(--fg);">导入的文章:</strong><ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: var(--fg-dim);">';
-          html += result.details.imported.map(f => `<li>${f.title} (${f.slug})</li>`).join('');
+          html += result.details.imported.map(f => `<li>${esc(f.title)} (${esc(f.slug)})</li>`).join('');
           html += '</ul></div>';
         }
 
         if (result.details.failed.length > 0) {
           html += '<div style="margin-top: 1rem;"><strong style="font-size: 0.85rem; color: var(--accent);">失败的文件:</strong><ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: var(--accent);">';
-          html += result.details.failed.map(f => `<li>${f.filename}: ${f.error}</li>`).join('');
+          html += result.details.failed.map(f => `<li>${esc(f.filename)}: ${esc(f.error)}</li>`).join('');
           html += '</ul></div>';
         }
 
@@ -390,8 +398,8 @@ importBtn.addEventListener('click', async () => {
           成功导入: <strong>${result.imported}</strong> 篇<br>
           失败: <strong>${result.failed}</strong> 篇
         </p>
-        ${result.details.imported.length > 0 ? '<div style="margin-top: 1rem;"><strong style="font-size: 0.85rem; color: var(--fg);">导入的文章:</strong><ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: var(--fg-dim);">' + result.details.imported.map(f => `<li>${f.title} (${f.slug})</li>`).join('') + '</ul></div>' : ''}
-        ${result.details.failed.length > 0 ? '<div style="margin-top: 1rem;"><strong style="font-size: 0.85rem; color: var(--accent);">失败的文件:</strong><ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: var(--accent);">' + result.details.failed.map(f => `<li>${f.filename}: ${f.error}</li>`).join('') + '</ul></div>' : ''}
+        ${result.details.imported.length > 0 ? '<div style="margin-top: 1rem;"><strong style="font-size: 0.85rem; color: var(--fg);">导入的文章:</strong><ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: var(--fg-dim);">' + result.details.imported.map(f => `<li>${esc(f.title)} (${esc(f.slug)})</li>`).join('') + '</ul></div>' : ''}
+        ${result.details.failed.length > 0 ? '<div style="margin-top: 1rem;"><strong style="font-size: 0.85rem; color: var(--accent);">失败的文件:</strong><ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: var(--accent);">' + result.details.failed.map(f => `<li>${esc(f.filename)}: ${esc(f.error)}</li>`).join('') + '</ul></div>' : ''}
         <a href="/admin" class="btn btn-outline btn-sm" style="margin-top: 1rem; display: inline-flex;">→ 返回管理后台</a>
       `;
     } else {

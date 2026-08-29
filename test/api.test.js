@@ -4,7 +4,9 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 
-process.env.FTS_DB_PATH = path.join(__dirname, '.tmp', 'api-test-' + process.pid + '.db');
+// Isolated per-file directory: node --test runs test files in parallel, so
+// each file must own its temp dir (see db.test.js for its own).
+process.env.FTS_DB_PATH = path.join(__dirname, '.tmp', 'api', 'test-' + process.pid + '.db');
 
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
@@ -109,6 +111,9 @@ test('login then CSRF-protected post creation works end to end', async () => {
 
   const loginRes = await request('POST', '/api/auth/login', { json: { username: ADMIN_USER, password: ADMIN_PASS } });
   assert.equal(loginRes.status, 200);
+  const loginData = await loginRes.json();
+  assert.ok(loginData.csrfToken, 'login response includes csrfToken');
+  assert.notEqual(loginData.csrfToken, tokenBeforeLogin, 'csrf token rotates on login (session regenerated)');
 
   // Mutation without CSRF token must be rejected.
   const noCsrf = await request('POST', '/api/posts', {
@@ -116,16 +121,29 @@ test('login then CSRF-protected post creation works end to end', async () => {
   });
   assert.equal(noCsrf.status, 403);
 
-  // Same session token is still valid after login.
-  const tokenAfterLogin = await getCsrfFrom('/admin');
-  assert.equal(tokenAfterLogin, tokenBeforeLogin);
+  // /api/auth/csrf returns the same token for the authenticated session.
+  const csrfRes = await request('GET', '/api/auth/csrf');
+  assert.equal(csrfRes.status, 200);
+  const csrfData = await csrfRes.json();
+  assert.equal(csrfData.csrfToken, loginData.csrfToken);
+
+  // Admin pages render with the rotated token too.
+  const tokenOnAdmin = await getCsrfFrom('/admin');
+  assert.equal(tokenOnAdmin, loginData.csrfToken);
 
   const createRes = await request('POST', '/api/posts', {
     json: { title: '测试文章', title_en: 'Test Post', slug: 'test-post', content: '## 正文\n\n代码块:\n\n```js\nconst a = 1;\n```', excerpt: '摘要', tags: ['测试', 'Node.js'], published: true },
-    headers: { 'X-CSRF-Token': tokenAfterLogin }
+    headers: { 'X-CSRF-Token': loginData.csrfToken }
   });
   assert.equal(createRes.status, 201);
   const { id } = await createRes.json();
+
+  // Duplicate slug returns 409, not a leaked 500.
+  const dupRes = await request('POST', '/api/posts', {
+    json: { title: '重复', slug: 'test-post', content: 'x' },
+    headers: { 'X-CSRF-Token': loginData.csrfToken }
+  });
+  assert.equal(dupRes.status, 409);
 
   // Listed and searchable
   const list = await request('GET', '/api/posts');
@@ -142,21 +160,23 @@ test('login then CSRF-protected post creation works end to end', async () => {
   const postText = await postRes.text();
   assert.match(postText, /hljs/);
 
-  // view_count incremented
+  // view_count incremented (flush the debounced counter first)
+  const viewCounter = require('../lib/viewCounter');
+  await viewCounter.flush();
   const detail = await request('GET', '/api/posts/test-post');
   const detailData = await detail.json();
   assert.ok(detailData.view_count >= 1);
 
-  // Tag page reachable
+  // Tag page reachable (tag name with % must not 500 — double-decode fix)
   const tagRes = await request('GET', '/tag/' + encodeURIComponent('测试'));
   assert.equal(tagRes.status, 200);
 
   // Delete
-  const delRes = await request('DELETE', '/api/posts/' + id, { headers: { 'X-CSRF-Token': tokenAfterLogin } });
+  const delRes = await request('DELETE', '/api/posts/' + id, { headers: { 'X-CSRF-Token': loginData.csrfToken } });
   assert.equal(delRes.status, 200);
 
   // Logout with CSRF
-  const logoutRes = await request('POST', '/api/auth/logout', { headers: { 'X-CSRF-Token': tokenAfterLogin } });
+  const logoutRes = await request('POST', '/api/auth/logout', { headers: { 'X-CSRF-Token': loginData.csrfToken } });
   assert.equal(logoutRes.status, 200);
 });
 
