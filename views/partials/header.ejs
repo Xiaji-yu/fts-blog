@@ -4,7 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %> — <%= config.site.shortName %></title>
+  <meta name="csrf-token" content="<%= csrfToken %>">
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/vendor/hljs/github-dark.css">
+  <link rel="alternate" type="application/rss+xml" title="<%= config.site.name %> · RSS" href="<%= (config.site.url || config.server.publicUrl).replace(/\/+$/, '') %>/feed.xml">
+  <meta property="og:title" content="<%= typeof ogTitle !== 'undefined' ? ogTitle : title %>">
+  <meta property="og:description" content="<%= typeof ogDescription !== 'undefined' ? ogDescription : config.site.description %>">
+  <meta property="og:url" content="<%= typeof ogUrl !== 'undefined' ? ogUrl : ((config.site.url || config.server.publicUrl).replace(/\/+$/, '') + '/') %>">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="<%= config.site.name %>">
+  <meta name="twitter:card" content="summary">
 </head>
 <body>
   <% if (nMark) { %>

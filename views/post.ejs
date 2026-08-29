@@ -1,4 +1,4 @@
-<%- include('partials/header', { title: title, wide: true }) %>
+<%- include('partials/header', { title: title, wide: true, ogTitle: post.title, ogDescription: post.excerpt || post.title, ogUrl: ((config.site.url || config.server.publicUrl).replace(/\/+$/, '')) + '/post/' + post.id }) %>
 
 <div class="title-block">
   <h1 class="main-title"><%= post.title %></h1>
@@ -11,7 +11,7 @@
 
 <div class="spec-block">
   <p><span class="label">图号</span> <strong><%= config.site.drawingPrefix %>-<%= String(post.id).padStart(3, '0') %></strong> · 比例 1:1</p>
-  <p><span class="label">日期</span> <strong><%= new Date(post.created_at).toLocaleDateString('zh-CN') %></strong> · 阅读时间 <strong><%= readTime %> min</strong></p>
+  <p><span class="label">日期</span> <strong><%= new Date(post.created_at).toLocaleDateString('zh-CN') %></strong> · 阅读时间 <strong><%= readTime %> min</strong> · 浏览 <strong><%= post.view_count %></strong></p>
 </div>
 
 <% if (post.cover_image) { %>
@@ -38,8 +38,26 @@
 <% if (post.tags && post.tags.length > 0) { %>
 <div class="card-tags mt-lg">
   <% post.tags.forEach(tag => { %>
-  <span class="tag">#<%= tag %></span>
+  <a href="/tag/<%= encodeURIComponent(tag) %>" class="tag">#<%= tag %></a>
   <% }) %>
+</div>
+<% } %>
+
+<% if (prevPost || nextPost) { %>
+<hr class="divider">
+<div class="post-nav" style="display: flex; gap: var(--spacing-md); align-items: stretch; flex-wrap: wrap;">
+  <% if (prevPost) { %>
+  <a href="/post/<%= prevPost.id %>" class="card-link" style="flex: 1; display: block; border: 1px solid var(--border); padding: 0.6rem 1rem;">
+    <span style="font-size: 0.7rem; color: var(--muted); display: block;">← 上一篇 · OLDER</span>
+    <%= prevPost.title %>
+  </a>
+  <% } %>
+  <% if (nextPost) { %>
+  <a href="/post/<%= nextPost.id %>" class="card-link" style="flex: 1; display: block; text-align: right; border: 1px solid var(--border); padding: 0.6rem 1rem;">
+    <span style="font-size: 0.7rem; color: var(--muted); display: block;">下一篇 · NEWER →</span>
+    <%= nextPost.title %>
+  </a>
+  <% } %>
 </div>
 <% } %>
 

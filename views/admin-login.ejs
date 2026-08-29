@@ -30,6 +30,7 @@
   </p>
 
   <form method="POST" action="/admin/login">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <div class="form-group">
       <label class="form-label">用户名 · Username</label>
       <input type="text" name="username" class="form-input" required autofocus>

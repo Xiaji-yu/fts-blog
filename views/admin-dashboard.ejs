@@ -10,6 +10,7 @@
     </span>
     &nbsp;&nbsp;
     <form method="POST" action="/admin/logout" style="display: inline;">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <button type="submit" class="btn btn-outline btn-sm">登出</button>
     </form>
     &nbsp;&nbsp;
@@ -139,7 +140,10 @@ async function changePassword(e) {
   try {
     const response = await fetch('/api/auth/password', {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+      },
       body: JSON.stringify({ currentPassword: current, newPassword: newPass })
     });
 
@@ -178,7 +182,10 @@ document.addEventListener('click', function(e) {
 
   fetch('/api/posts/' + id, {
     method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' }
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+    }
   }).then(response => {
     if (response.ok) {
       alert('✓ 删除成功 · Post deleted');

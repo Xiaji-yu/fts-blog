@@ -9,6 +9,16 @@
     user-select: none;
     -webkit-user-select: none;
   }
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin: var(--spacing-lg) 0;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--fg-dim);
+  }
 </style>
 
 <div class="homepage-content">
@@ -61,7 +71,7 @@
       <% if (post.tags && post.tags.length > 0) { %>
       <div class="card-tags">
         <% post.tags.slice(0, 3).forEach(tag => { %>
-        <span class="tag"><%= tag %></span>
+        <a href="/tag/<%= encodeURIComponent(tag) %>" class="tag">#<%= tag %></a>
         <% }) %>
       </div>
       <% } %>
@@ -69,6 +79,18 @@
     </div>
   </article>
   <% }) %>
+</div>
+<% } %>
+
+<% if (typeof pagination !== 'undefined' && pagination.pages > 1) { %>
+<div class="pagination">
+  <% if (pagination.hasPrev) { %>
+  <a href="/?page=<%= pagination.page - 1 %>" class="btn btn-outline btn-sm">← 上一页 · PREV</a>
+  <% } %>
+  <span>第 <%= pagination.page %> / <%= pagination.pages %> 页</span>
+  <% if (pagination.hasNext) { %>
+  <a href="/?page=<%= pagination.page + 1 %>" class="btn btn-outline btn-sm">下一页 · NEXT →</a>
+  <% } %>
 </div>
 <% } %>
 

@@ -1,0 +1,71 @@
+<%- include('partials/header', { title: title }) %>
+
+<div class="title-block">
+  <h1 class="main-title"><%= heading %></h1>
+  <% if (mode === 'search') { %>
+  <p class="sub-title-en">Search Results · 站内搜索</p>
+  <% } else { %>
+  <p class="sub-title-en">Tag Archive · 标签归档</p>
+  <% } %>
+</div>
+
+<hr class="divider">
+
+<div class="spec-block">
+  <p><span class="label">系统</span> <strong><%= config.blueprint.prefix %>-QUERY</strong> · 命中 <strong><%= total %></strong> 篇</p>
+</div>
+
+<% if (mode === 'search') { %>
+<form method="GET" action="/search" style="max-width: 480px; margin: var(--spacing-md) auto; display: flex; gap: var(--spacing-sm);">
+  <input type="search" name="q" value="<%= query %>" class="form-input" placeholder="搜索文章标题 / 摘要 / 内容…" required>
+  <button type="submit" class="btn">搜索 · GO</button>
+</form>
+<% } %>
+
+<% if (posts.length === 0) { %>
+<div class="description">
+  <p><%= mode === 'search' ? '未找到匹配的文章。' : '该标签下暂无已发布文章。' %></p>
+  <% if (mode === 'search') { %>
+  <p class="mt-sm">试试更短的关键词，或前往 <a href="/tags">标签页</a> 浏览。</p>
+  <% } %>
+</div>
+<% } else { %>
+<div class="post-grid" style="margin-top: var(--spacing-lg);">
+  <% posts.forEach(post => { %>
+  <article class="card">
+    <div class="card-header">
+      <div>
+        <h3 class="card-title"><a href="/post/<%= post.id %>" style="color: inherit; text-decoration: none;"><%= post.title %></a></h3>
+        <% if (post.title_en) { %>
+        <div class="card-title-en"><%= post.title_en %></div>
+        <% } %>
+      </div>
+      <div class="card-meta">
+        <%= new Date(post.created_at).toLocaleDateString('zh-CN') %>
+      </div>
+    </div>
+    <% if (post.excerpt) { %>
+    <p class="card-excerpt"><%= post.excerpt %></p>
+    <% } %>
+    <div class="card-footer">
+      <% if (post.tags && post.tags.length > 0) { %>
+      <div class="card-tags">
+        <% post.tags.slice(0, 3).forEach(tag => { %>
+        <a href="/tag/<%= encodeURIComponent(tag) %>" class="tag">#<%= tag %></a>
+        <% }) %>
+      </div>
+      <% } %>
+      <a href="/post/<%= post.id %>" class="card-link">READ →</a>
+    </div>
+  </article>
+  <% }) %>
+</div>
+<% } %>
+
+<hr class="divider">
+
+<div class="text-center mt-md">
+  <a href="/" class="card-link" style="display: inline-flex; border: 1px solid var(--border); padding: 0.5rem 1.2rem;"><%= config.post.backToIndex %></a>
+</div>
+
+<%- include('partials/footer') %>

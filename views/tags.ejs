@@ -1,0 +1,34 @@
+<%- include('partials/header', { title: title }) %>
+
+<div class="title-block">
+  <h1 class="main-title">标签 · TAGS</h1>
+  <p class="sub-title-en">Tag Index · 全部标签</p>
+</div>
+
+<hr class="divider">
+
+<div class="spec-block">
+  <p><span class="label">系统</span> <strong><%= config.blueprint.prefix %>-TAGS</strong> · 共 <strong><%= tags.length %></strong> 个标签</p>
+</div>
+
+<% if (tags.length === 0) { %>
+<div class="description">
+  <p>暂无标签。</p>
+</div>
+<% } else { %>
+<div style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm); margin-top: var(--spacing-lg); justify-content: center;">
+  <% tags.forEach(tag => { %>
+  <a href="/tag/<%= encodeURIComponent(tag.name) %>" class="tag" style="font-size: 0.95rem; padding: 0.45rem 0.9rem; text-decoration: none;">
+    #<%= tag.name %> <span style="opacity: 0.65; font-family: var(--font-mono);">(<%= tag.post_count %>)</span>
+  </a>
+  <% }) %>
+</div>
+<% } %>
+
+<hr class="divider">
+
+<div class="text-center mt-md">
+  <a href="/" class="card-link" style="display: inline-flex; border: 1px solid var(--border); padding: 0.5rem 1.2rem;"><%= config.post.backToIndex %></a>
+</div>
+
+<%- include('partials/footer') %>
