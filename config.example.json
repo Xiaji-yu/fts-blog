@@ -4,7 +4,16 @@
     "shortName": "夏祭",
     "description": "夏祭 · 个人前端试验场",
     "tagline": "Xiaji · Frontend Proving Ground",
-    "descriptionLong": "夏祭的个人前端试验场。每张「图纸」是一件独立的作品，探索前端技术的边界。"
+    "descriptionLong": "夏祭的个人前端试验场。每张「图纸」是一件独立的作品，探索前端技术的边界。",
+    "url": null
+  },
+  "security": {
+    "rateLimit": {
+      "loginWindowMs": 900000,
+      "loginMax": 20,
+      "generalWindowMs": 60000,
+      "generalMax": 300
+    }
   },
   "author": {
     "name": "夏祭",
