@@ -12,8 +12,13 @@
 # 安装依赖
 npm install
 
+# 运行测试
+npm test
+
 # 启动服务器（前台运行）
-node server.js
+npm start
+# 或开发模式（nodemon 自动重启）
+npm run dev
 
 # 访问
 # 主页: http://localhost:3000
@@ -27,12 +32,8 @@ node server.js
 # 安装 PM2（全局）
 npm install -g pm2
 
-# 启动博客（后台守护进程）
-pm2 start server.js --name blog
-
-# 设置开机自启
-pm2 startup
-pm2 save
+# 使用 PM2 配置文件启动（自动设置 NODE_ENV=production）
+pm2 start ecosystem.config.js
 
 # 常用命令
 pm2 status              # 查看进程状态
@@ -40,25 +41,29 @@ pm2 logs blog           # 查看日志
 pm2 restart blog        # 重启
 pm2 stop blog           # 停止
 pm2 delete blog         # 删除进程
+
+# 开机自启
+pm2 startup && pm2 save
 ```
+
+> **建议**: 在 `ecosystem.config.js` 的 `env` 中设置一个随机 `SESSION_SECRET`，
+> 未设置时会自动生成并持久化到 `data/.session-secret`（跨重启保持登录态）。
 
 ## ⚙️ 个性化配置
 
 博客的所有可定制项都集中在 `config.json` 中。首次部署时：
 
 ```bash
-# 复制示例配置
 cp config.example.json config.json
-
-# 编辑配置
-nano config.json
 ```
+
+配置加载器（`config/loader.js`）内置了完整默认值，`config.json` 只需覆盖你想改的项。
 
 ### 配置段说明
 
 | 段 | 用途 |
 |---|---|
-| `site` | 站点名称、描述、图号前缀、阅读速度 |
+| `site` | 站点名称、描述、图号前缀、阅读速度、`url`（RSS/OG 使用的规范站点地址） |
 | `author` | 署名、项目名、版本号 |
 | `blueprint` | 蓝图前缀、所有 UI 标签文本 |
 | `admin` | 管理后台标题、按钮文案、表单标签 |
@@ -68,13 +73,14 @@ nano config.json
 | `server` | 端口、内外网 URL |
 | `database` | 数据库路径、保存超时 |
 | `auth` | 默认用户名、密码策略、bcrypt 轮数 |
-| `session` | 会话过期时间、cookie 安全选项 |
+| `session` | 会话过期时间、cookie 安全选项（`cookieSecure` 可强制 HTTPS cookie） |
+| `security` | 登录/API 速率限制 |
 | `upload` | 上传目录、大小限制、允许的文件类型 |
 | `import` | Obsidian 笔记目录、callout 图标映射 |
 | `features` | 蓝图风格、DOMPurify 等开关 |
 | `pagination` | 文章列表默认每页数量 |
 
-> **注意**: `config.json` 已加入 `.gitignore`，不会被提交到仓库。`config.example.json` 是模板文件，包含所有默认值。
+> **注意**: `config.json` 已加入 `.gitignore`，不会被提交到仓库。`config.example.json` 是模板文件。
 
 ## 🔐 管理员凭证
 
@@ -87,45 +93,55 @@ nano config.json
 
 1. 登录管理后台: http://localhost:3000/admin
 2. 点击 "📥 导入 Obsidian" 按钮
-3. 拖拽或选择 .md 文件
+3. 拖拽或选择 .md 文件（或点击 "扫描经验目录" 直接导入 `经验/` 下的全部笔记）
 4. 点击 "开始导入"
 
 ### 支持的 Obsidian 语法
 
 - ✅ YAML frontmatter (title, date, tags 等)
 - ✅ Wiki 链接 `[[Link]]` → `[Link](/post/:id)`
-- ✅ 图片嵌入 `![[image.png]]`
+- ✅ 图片嵌入 `![[image.png]]` → `/uploads/...`
 - ✅ Callout 语法 `> [!note]` → 引用块
 - ✅ 标签自动提取
-- ✅ 批量导入
+- ✅ 表格单元格管道符自动转义
+- ✅ 批量导入（幂等：同 slug 跳过）
 
-### Obsidian 文件示例
+## 🔌 路由 / API 端点
 
-```markdown
----
-title: 我的笔记
-date: 2026-08-18
-tags: [技术, 前端]
----
+### 公开页面
 
-# 我的笔记
+| 路径 | 说明 |
+|---|---|
+| `/` | 首页（分页） |
+| `/post/:id` | 文章页（阅读时长、浏览量、上一篇/下一篇） |
+| `/tags` | 标签索引 |
+| `/tag/:name` | 标签归档 |
+| `/search?q=` | 站内搜索 |
+| `/feed.xml` | RSS 2.0 订阅 |
+| `/healthz` | 健康检查 |
+| `/api` | API 文档页 |
 
-这是一篇从 Obsidian 导入的笔记。
+### 公开 API
 
-## 相关链接
+- `GET /api/posts` - 已发布文章列表（分页）
+- `GET /api/posts/:slug` - 按 slug 获取文章
+- `GET /api/tags` - 所有标签（含文章数）
 
-- [[另一篇笔记]]
-- ![[diagram.png]]
+### 管理 API（需要登录 + CSRF Token）
 
-> [!note] 重要提示
-> 这是 Obsidian 的 callout 语法
+- `POST /api/auth/login` - 登录（限流保护，无需 CSRF）
+- `POST /api/auth/logout` - 登出
+- `PUT /api/auth/password` - 修改密码
+- `POST /api/posts` / `PUT /api/posts/:id` / `DELETE /api/posts/:id` - 文章 CRUD
+- `GET /api/posts/id/:id` - 按 ID 获取文章
+- `POST /api/tags` - 创建标签
+- `POST /api/upload` - 上传图片
+- `GET /api/uploads` - 图片列表
+- `DELETE /api/uploads/:filename` - 删除图片
+- `GET /api/import/status` - 导入统计
 
-## 代码示例
-
-```javascript
-const greeting = "Hello, Obsidian!";
-```
-```
+> 除登录外的所有写操作都要求 CSRF Token：表单以 `_csrf` 字段提交，
+> fetch 请求以 `X-CSRF-Token` 请求头发送（页面 `<meta name="csrf-token">` 中获取）。
 
 ## 🎨 设计特点
 
@@ -134,75 +150,81 @@ const greeting = "Hello, Obsidian!";
 - **罗盘 "N" 标记**: 右上角固定定位
 - **双语标题**: 中文 + 英文等宽字体
 - **卡片系统**: 带技术注释的博客文章卡片
+- **代码高亮**: 服务端 marked + highlight.js，GitHub Dark 主题
 
-## 🔌 REST API 端点
+## 🛠 技术栈
 
-### 公开接口
-
-- `GET /api/posts` - 获取已发布文章列表（分页）
-- `GET /api/posts/:id` - 根据 ID 获取单篇文章
-- `GET /api/tags` - 获取所有标签
-
-### 管理接口（需要认证）
-
-- `POST /api/auth/login` - 管理员登录
-- `POST /api/auth/logout` - 管理员登出
-- `POST /api/posts` - 创建新文章
-- `PUT /api/posts/:id` - 更新文章
-- `DELETE /api/posts/:id` - 删除文章
+- **后端**: Node.js + Express
+- **数据库**: SQLite (sql.js)，统一数据访问层 `database/db.js`（串行写 + 事务回滚）
+- **迁移**: 顺序迁移 `database/migrations.js`（schema_migrations 表）
+- **前端**: HTML/CSS/JS + EJS 模板
+- **认证**: bcrypt + express-session + CSRF + 登录限流
+- **Markdown**: marked + highlight.js + DOMPurify（XSS 净化）
+- **测试**: Node 内置 test runner（`npm test`）
 
 ## 📁 项目结构
 
 ```text
 fts-blog/
-├── server.js                  # Express 主入口
-├── package.json                # 依赖配置
-├── config.json                 # 个性化配置（不提交到仓库）
-├── config.example.json         # 配置模板
+├── server.js                  # 入口：初始化数据库 + 启动监听
+├── app.js                     # Express 应用装配（可被测试直接导入）
+├── ecosystem.config.js        # PM2 生产配置
+├── package.json               # 依赖配置
+├── config.json                # 个性化配置（不提交到仓库）
+├── config.example.json        # 配置模板
 ├── config/
-│   └── loader.js               # 配置加载器
+│   └── loader.js              # 配置加载器（内置默认值 + 深度合并）
 ├── database/
-│   ├── init.js                 # SQLite 初始化
-│   └── seed.js                 # 示例文章
+│   ├── db.js                  # 统一数据访问层（单例 + 串行写 + 事务）
+│   ├── migrations.js          # 顺序数据库迁移
+│   ├── init.js                # 初始化：迁移 + 管理员 + 种子数据
+│   └── seed.js                # 示例文章种子
+├── lib/
+│   ├── obsidian.js            # Obsidian 语法转换（可单测）
+│   └── cache.js               # 内存 TTL 缓存
 ├── middleware/
-│   └── auth.js                 # 认证中间件
+│   ├── auth.js                # 认证中间件
+│   ├── csrf.js                # CSRF 防护
+│   └── rateLimit.js           # 登录/API 限流
 ├── routes/
-│   ├── api.js                  # REST API
-│   ├── admin.js                # 管理页面
-│   ├── public.js               # 公开页面
-│   └── import.js               # Obsidian 导入
+│   ├── api.js                 # REST API + 上传 + 图片库
+│   ├── admin.js               # 管理页面
+│   ├── public.js              # 公开页面 + RSS + 搜索 + 标签
+│   └── import.js              # Obsidian 导入
 ├── public/
-│   ├── css/
-│   │   └── style.css           # 蓝图风格 CSS
-│   └── js/
-│       └── main.js             # 前端 JS
+│   └── css/
+│       └── style.css          # 蓝图风格 CSS
 ├── views/
-│   ├── index.ejs               # 主页
-│   ├── post.ejs                # 文章页
-│   ├── admin-dashboard.ejs     # 管理后台
-│   ├── admin-editor.ejs        # 文章编辑器
-│   ├── admin-import.ejs        # Obsidian 导入
-│   ├── admin-login.ejs         # 登录页
-│   ├── admin-preview.ejs       # 预览页
-│   ├── api-info.ejs             # API 文档
-│   ├── 404.ejs                  # 404 页面
+│   ├── index.ejs              # 主页（分页）
+│   ├── post.ejs               # 文章页（TOC/上下篇/浏览量）
+│   ├── tags.ejs               # 标签索引
+│   ├── search.ejs             # 搜索/标签归档
+│   ├── 404.ejs                # 404 页面
+│   ├── api-info.ejs           # API 文档
+│   ├── admin-*.ejs            # 管理后台（登录/仪表盘/编辑器/导入/预览）
 │   └── partials/
-│       ├── header.ejs           # 头部模板
-│       └── footer.ejs           # 底部模板
-├── uploads/                    # 图片上传目录
-├── data/                       # SQLite 数据库
-├── 经验/                        # Obsidian 笔记源目录
-└── examples/                   # 导入示例文件
+│       ├── header.ejs         # 头部（OG/RSS/CSRF meta/高亮样式）
+│       └── footer.ejs         # 底部（备案 + 标签/搜索/RSS 链接）
+├── uploads/                   # 图片上传目录
+├── data/                      # SQLite 数据库 + session secret
+├── 经验/                       # Obsidian 笔记源目录
+├── examples/                  # 导入示例文件
+├── test/                      # node:test 自动化测试
+├── deploy_config.example.py   # 部署凭证模板（复制为 deploy_config.py 并填写）
+└── deploy_*.py                # 远程部署脚本（PM2/SSH，凭证从 deploy_config.py 读取）
 ```
 
-## 🛠 技术栈
+## 🧪 测试
 
-- **后端**: Node.js + Express
-- **数据库**: SQLite (sql.js)
-- **前端**: HTML/CSS/JS + EJS 模板
-- **认证**: bcrypt + express-session
-- **Markdown**: marked
-- **YAML**: js-yaml
+```bash
+npm test
+```
+
+- `test/obsidian.test.js` — frontmatter 解析与 Obsidian 语法转换
+- `test/db.test.js` — 数据层（迁移幂等、读写、事务回滚/提交）
+- `test/api.test.js` — 端到端（登录、CSRF、文章 CRUD、RSS、搜索、限流）
+
+测试使用独立的临时数据库（`test/.tmp/`），不影响 `data/blog.db`。
 
 ## 📝 许可证
 

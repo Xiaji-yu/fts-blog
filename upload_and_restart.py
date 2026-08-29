@@ -5,9 +5,10 @@ import paramiko
 import sys
 import os
 
-HOST = 'xiaji.xin'
-USER = 'tempuser'
-PASS = 'test'
+try:
+    from deploy_config import HOST, USER, PASS
+except ImportError:
+    raise SystemExit('Missing deploy_config.py — copy deploy_config.example.py to deploy_config.py and fill in credentials.')
 
 FILES = [
     (r'D:\code\blog\fts-blog\routes\import.js', '/var/www/blog/routes/import.js'),
