@@ -6,12 +6,20 @@ node_modules/
 # Database
 data/blog.db
 data/*.db
+data/.session-secret
 
 # Uploads
 uploads/
 
 # Config (contains sensitive/personalized settings)
 config.json
+deploy_config.py
+
+# Local npm cache used by offline installs
+.npm-cache/
+
+# Test artifacts
+test/.tmp/
 
 # Logs
 *.log

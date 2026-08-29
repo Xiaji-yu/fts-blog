@@ -1,26 +1,26 @@
+'use strict';
 const express = require('express');
 const router = express.Router();
-const initSqlJs = require('sql.js');
 const bcrypt = require('bcrypt');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const config = require('../config/loader');
+const db = require('../database/db');
 const { requireAuth } = require('../middleware/auth');
+const { generateToken, csrfProtect } = require('../middleware/csrf');
+const { loginLimiter, apiLimiter } = require('../middleware/rateLimit');
+const cache = require('../lib/cache');
 
-const DB_PATH = path.join(__dirname, '..', 'data', 'blog.db');
-const UPLOAD_DIR = path.join(__dirname, '..', config.upload.directory);
+const UPLOAD_DIR = path.join(__dirname, '..', config.upload.directory || 'uploads');
 
-// Ensure upload directory exists
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
 // Configure multer for image uploads
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR);
-  },
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
@@ -30,87 +30,56 @@ const storage = multer.diskStorage({
 const allowedTypesRegex = new RegExp(config.upload.allowedTypes.join('|'));
 
 const upload = multer({
-  storage: storage,
+  storage,
   fileFilter: (req, file, cb) => {
     const extname = allowedTypesRegex.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypesRegex.test(file.mimetype);
-    if (extname && mimetype) {
-      return cb(null, true);
-    }
+    if (extname && mimetype) return cb(null, true);
     cb(new Error('Only image files are allowed'));
   },
   limits: { fileSize: config.upload.maxFileSizeMB * 1024 * 1024 }
 });
 
-// Helper to get database connection
-async function getDb() {
-  const SQL = await initSqlJs();
-  if (fs.existsSync(DB_PATH)) {
-    const fileBuffer = fs.readFileSync(DB_PATH);
-    return new SQL.Database(fileBuffer);
-  }
-  return new SQL.Database();
+// Simple input validation helpers
+function slugifySlug(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
-// Helper to save database (serialized writes prevent race conditions)
-const saveDbQueue = [];
-let saveDbProcessing = false;
-
-function withTimeout(promise, ms = config.database.saveTimeoutMs) {
-  let timeoutId;
-  const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => {
-      reject(new Error(`Database save timed out after ${ms}ms`));
-    }, ms);
-  });
-  return Promise.race([promise.finally(() => clearTimeout(timeoutId)), timeoutPromise]);
+function validatePostInput({ title, slug, content }) {
+  if (!title || !String(title).trim()) return '标题不能为空 · Title is required';
+  if (!slug || !String(slug).trim()) return 'Slug 不能为空 · Slug is required';
+  if (!/^[a-z0-9-]+$/.test(slug)) return 'Slug 仅允许小写字母、数字和连字符';
+  if (!content || !String(content).trim()) return '内容不能为空 · Content is required';
+  if (String(title).length > 200) return '标题过长 · Title too long';
+  return null;
 }
 
-async function saveDb(db) {
-  return new Promise((resolve, reject) => {
-    saveDbQueue.push({ db, resolve, reject });
-    processSaveDbQueue();
-  });
+function normalizeTags(tags) {
+  if (!tags) return [];
+  const list = Array.isArray(tags) ? tags : String(tags).split(',');
+  return list.map((t) => String(t).trim()).filter(Boolean);
 }
 
-async function processSaveDbQueue() {
-  if (saveDbProcessing || saveDbQueue.length === 0) return;
-  saveDbProcessing = true;
-
-  const { db, resolve, reject } = saveDbQueue.shift();
-  try {
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    await withTimeout(fs.promises.writeFile(DB_PATH, buffer), config.database.saveTimeoutMs);
-    db.close();
-    resolve();
-  } catch (err) {
-    console.error('saveDb error:', err);
-    db.close();
-    reject(err);
-  } finally {
-    saveDbProcessing = false;
-    if (saveDbQueue.length > 0) {
-      processSaveDbQueue();
-    }
-  }
+function invalidatePublicCache() {
+  cache.invalidateAll();
 }
+
+// Rate limit the whole API generously, then protect mutations with CSRF.
+router.use(apiLimiter);
 
 // ===== AUTH ROUTES =====
 
-// POST /api/auth/login
-router.post('/auth/login', async (req, res) => {
+// POST /api/auth/login (exempt from CSRF; protected by loginLimiter)
+router.post('/auth/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password required' });
     }
 
-    const db = await getDb();
-    const result = db.exec("SELECT id, password_hash FROM users WHERE username = ?", [username]);
+    const result = await db.exec('SELECT id, password_hash FROM users WHERE username = ?', [username]);
 
     if (result.length === 0 || result[0].values.length === 0) {
-      db.close();
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -118,26 +87,28 @@ router.post('/auth/login', async (req, res) => {
     const valid = await bcrypt.compare(password, passwordHash);
 
     if (!valid) {
-      db.close();
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Ensure a CSRF token exists so subsequent API mutations can be validated.
+    generateToken(req);
     req.session.userId = userId;
     req.session.username = username;
-    db.close();
 
     res.json({ message: 'Login successful', user: { id: userId, username } });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
+// Everything below requires CSRF for non-safe methods.
+router.use(csrfProtect);
+
 // POST /api/auth/logout
 router.post('/auth/logout', (req, res) => {
   req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Logout failed' });
-    }
+    if (err) return res.status(500).json({ error: 'Logout failed' });
     res.json({ message: 'Logout successful' });
   });
 });
@@ -147,12 +118,11 @@ router.post('/auth/logout', (req, res) => {
 // GET /api/posts - List all published posts (paginated)
 router.get('/posts', async (req, res) => {
   try {
-    const db = await getDb();
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || config.pagination.defaultLimit;
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || config.pagination.defaultLimit;
     const offset = (page - 1) * limit;
 
-    const result = db.exec(
+    const result = await db.exec(
       `SELECT p.*, GROUP_CONCAT(t.name) as tags
        FROM posts p
        LEFT JOIN post_tags pt ON p.id = pt.post_id
@@ -164,77 +134,60 @@ router.get('/posts', async (req, res) => {
       [limit, offset]
     );
 
-    const posts = result.length > 0 ? result[0].values.map(row => ({
-      id: row[0],
-      title: row[1],
-      title_en: row[2],
-      slug: row[3],
-      content: row[4],
-      excerpt: row[5],
-      cover_image: row[6],
-      published: row[7],
-      created_at: row[8],
-      updated_at: row[9],
-      tags: row[10] ? row[10].split(',') : []
-    })) : [];
-
-    // Get total count
-    const countResult = db.exec("SELECT COUNT(*) FROM posts WHERE published = 1");
+    const posts = result.length > 0 ? result[0].values.map(rowToPost) : [];
+    const countResult = await db.exec('SELECT COUNT(*) FROM posts WHERE published = 1');
     const total = countResult.length > 0 ? countResult[0].values[0][0] : 0;
-
-    db.close();
 
     res.json({
       posts,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit)
-      }
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) }
     });
   } catch (err) {
+    console.error('List posts error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
+function rowToPost(row) {
+  return {
+    id: row[0],
+    title: row[1],
+    title_en: row[2],
+    slug: row[3],
+    content: row[4],
+    excerpt: row[5],
+    cover_image: row[6],
+    published: row[7],
+    created_at: row[8],
+    updated_at: row[9],
+    view_count: row[10] !== undefined ? row[10] : 0,
+    tags: row[11] ? row[11].split(',') : []
+  };
+}
+
+async function getTagsForPost(postId) {
+  const tagsResult = await db.exec(
+    'SELECT t.name FROM tags t JOIN post_tags pt ON t.id = pt.tag_id WHERE pt.post_id = ?',
+    [postId]
+  );
+  return tagsResult.length > 0 ? tagsResult[0].values.map((t) => t[0]) : [];
+}
+
 // GET /api/posts/:slug - Get single post by slug
 router.get('/posts/:slug', async (req, res) => {
   try {
-    const db = await getDb();
-    const result = db.exec(
-      "SELECT * FROM posts WHERE slug = ? AND published = 1",
-      [req.params.slug]
-    );
+    const result = await db.exec('SELECT * FROM posts WHERE slug = ? AND published = 1', [req.params.slug]);
 
     if (result.length === 0 || result[0].values.length === 0) {
-      db.close();
       return res.status(404).json({ error: 'Post not found' });
     }
 
     const row = result[0].values[0];
-    const tagsResult = db.exec(
-      "SELECT t.name FROM tags t JOIN post_tags pt ON t.id = pt.tag_id WHERE pt.post_id = ?",
-      [row[0]]
-    );
-    const tags = tagsResult.length > 0 ? tagsResult[0].values.map(t => t[0]) : [];
+    const tags = await getTagsForPost(row[0]);
 
-    db.close();
-
-    res.json({
-      id: row[0],
-      title: row[1],
-      title_en: row[2],
-      slug: row[3],
-      content: row[4],
-      excerpt: row[5],
-      cover_image: row[6],
-      published: row[7],
-      created_at: row[8],
-      updated_at: row[9],
-      tags
-    });
+    res.json({ ...rowToPost(row), tags });
   } catch (err) {
+    console.error('Get post error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -242,37 +195,18 @@ router.get('/posts/:slug', async (req, res) => {
 // GET /api/posts/id/:id - Get single post by ID (admin)
 router.get('/posts/id/:id', requireAuth, async (req, res) => {
   try {
-    const db = await getDb();
-    const result = db.exec("SELECT * FROM posts WHERE id = ?", [req.params.id]);
+    const result = await db.exec('SELECT * FROM posts WHERE id = ?', [req.params.id]);
 
     if (result.length === 0 || result[0].values.length === 0) {
-      db.close();
       return res.status(404).json({ error: 'Post not found' });
     }
 
     const row = result[0].values[0];
-    const tagsResult = db.exec(
-      "SELECT t.name FROM tags t JOIN post_tags pt ON t.id = pt.tag_id WHERE pt.post_id = ?",
-      [row[0]]
-    );
-    const tags = tagsResult.length > 0 ? tagsResult[0].values.map(t => t[0]) : [];
+    const tags = await getTagsForPost(row[0]);
 
-    db.close();
-
-    res.json({
-      id: row[0],
-      title: row[1],
-      title_en: row[2],
-      slug: row[3],
-      content: row[4],
-      excerpt: row[5],
-      cover_image: row[6],
-      published: row[7],
-      created_at: row[8],
-      updated_at: row[9],
-      tags
-    });
+    res.json({ ...rowToPost(row), tags });
   } catch (err) {
+    console.error('Get post by id error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -282,51 +216,41 @@ router.post('/posts', requireAuth, async (req, res) => {
   try {
     const { title, title_en, slug, content, excerpt, published, tags } = req.body;
 
-    if (!title || !slug || !content) {
-      return res.status(400).json({ error: 'Title, slug, and content are required' });
-    }
+    const validationError = validatePostInput({ title, slug, content });
+    if (validationError) return res.status(400).json({ error: validationError });
 
-    const db = await getDb();
     const now = new Date().toISOString();
+    const postId = await db.transaction(async (tx) => {
+      tx.run(
+        'INSERT INTO posts (title, title_en, slug, content, excerpt, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [title, title_en || null, slugifySlug(slug), content, excerpt || null, published ? 1 : 0, now, now]
+      );
+      const id = tx.lastInsertRowid();
+      await insertTags(tx, id, normalizeTags(tags));
+      return id;
+    });
 
-    db.run(
-      "INSERT INTO posts (title, title_en, slug, content, excerpt, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [title, title_en || null, slug, content, excerpt || null, published ? 1 : 0, now, now]
-    );
-
-    const postId = db.exec("SELECT last_insert_rowid()")[0].values[0][0];
-
-    // Handle tags - support both comma-separated string and array
-    if (tags) {
-      const tagList = Array.isArray(tags)
-        ? tags.map(t => t.trim()).filter(t => t)
-        : String(tags).split(',').map(t => t.trim()).filter(t => t);
-
-      for (const tagName of tagList) {
-        if (!tagName.trim()) continue;
-
-        // Insert tag if not exists
-        const tagResult = db.exec("SELECT id FROM tags WHERE name = ?", [tagName.trim()]);
-        let tagId;
-        if (tagResult.length === 0 || tagResult[0].values.length === 0) {
-          db.run("INSERT INTO tags (name) VALUES (?)", [tagName.trim()]);
-          tagId = db.exec("SELECT last_insert_rowid()")[0].values[0][0];
-        } else {
-          tagId = tagResult[0].values[0][0];
-        }
-
-        // Link post to tag
-        db.run("INSERT OR IGNORE INTO post_tags (post_id, tag_id) VALUES (?, ?)", [postId, tagId]);
-      }
-    }
-
-    await saveDb(db);
-
+    invalidatePublicCache();
     res.status(201).json({ message: 'Post created', id: postId });
   } catch (err) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Create post error:', err);
+    res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
+
+async function insertTags(tx, postId, tagList) {
+  for (const tagName of tagList) {
+    const tagResult = tx.exec('SELECT id FROM tags WHERE name = ?', [tagName]);
+    let tagId;
+    if (tagResult.length === 0 || tagResult[0].values.length === 0) {
+      tx.run('INSERT INTO tags (name) VALUES (?)', [tagName]);
+      tagId = tx.lastInsertRowid();
+    } else {
+      tagId = tagResult[0].values[0][0];
+    }
+    tx.run('INSERT OR IGNORE INTO post_tags (post_id, tag_id) VALUES (?, ?)', [postId, tagId]);
+  }
+}
 
 // PUT /api/posts/:id - Update post (admin)
 router.put('/posts/:id', requireAuth, async (req, res) => {
@@ -334,49 +258,26 @@ router.put('/posts/:id', requireAuth, async (req, res) => {
     const { title, title_en, slug, content, excerpt, published, tags } = req.body;
     const postId = req.params.id;
 
-    if (!title || !slug || !content) {
-      return res.status(400).json({ error: 'Title, slug, and content are required' });
-    }
+    const validationError = validatePostInput({ title, slug, content });
+    if (validationError) return res.status(400).json({ error: validationError });
 
-    const db = await getDb();
     const now = new Date().toISOString();
-
     // published comes as "on" from checkbox or boolean
     const publishedVal = (published === 'on' || published === true || published === 'true') ? 1 : 0;
 
-    db.run(
-      "UPDATE posts SET title = ?, title_en = ?, slug = ?, content = ?, excerpt = ?, published = ?, updated_at = ? WHERE id = ?",
-      [title, title_en || null, slug, content, excerpt || null, publishedVal, now, postId]
-    );
+    await db.transaction(async (tx) => {
+      tx.run(
+        'UPDATE posts SET title = ?, title_en = ?, slug = ?, content = ?, excerpt = ?, published = ?, updated_at = ? WHERE id = ?',
+        [title, title_en || null, slugifySlug(slug), content, excerpt || null, publishedVal, now, postId]
+      );
+      tx.run('DELETE FROM post_tags WHERE post_id = ?', [postId]);
+      await insertTags(tx, postId, normalizeTags(tags));
+    });
 
-    // Remove old tags
-    db.run("DELETE FROM post_tags WHERE post_id = ?", [postId]);
-
-    // Handle tags - support both comma-separated string and array
-    if (tags) {
-      const tagList = Array.isArray(tags)
-        ? tags.map(t => t.trim()).filter(t => t)
-        : String(tags).split(',').map(t => t.trim()).filter(t => t);
-
-      for (const tagName of tagList) {
-        const tagResult = db.exec("SELECT id FROM tags WHERE name = ?", [tagName]);
-        let tagId;
-        if (tagResult.length === 0 || tagResult[0].values.length === 0) {
-          db.run("INSERT INTO tags (name) VALUES (?)", [tagName]);
-          tagId = db.exec("SELECT last_insert_rowid()")[0].values[0][0];
-        } else {
-          tagId = tagResult[0].values[0][0];
-        }
-
-        db.run("INSERT OR IGNORE INTO post_tags (post_id, tag_id) VALUES (?, ?)", [postId, tagId]);
-      }
-    }
-
-    await saveDb(db);
-
+    invalidatePublicCache();
     res.json({ message: 'Post updated' });
   } catch (err) {
-    console.error('Update error:', err);
+    console.error('Update post error:', err);
     res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
@@ -384,13 +285,14 @@ router.put('/posts/:id', requireAuth, async (req, res) => {
 // DELETE /api/posts/:id - Delete post (admin)
 router.delete('/posts/:id', requireAuth, async (req, res) => {
   try {
-    const db = await getDb();
-    db.run("DELETE FROM post_tags WHERE post_id = ?", [req.params.id]);
-    db.run("DELETE FROM posts WHERE id = ?", [req.params.id]);
-    await saveDb(db);
-
+    await db.transaction(async (tx) => {
+      tx.run('DELETE FROM post_tags WHERE post_id = ?', [req.params.id]);
+      tx.run('DELETE FROM posts WHERE id = ?', [req.params.id]);
+    });
+    invalidatePublicCache();
     res.json({ message: 'Post deleted' });
   } catch (err) {
+    console.error('Delete post error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -400,13 +302,18 @@ router.delete('/posts/:id', requireAuth, async (req, res) => {
 // GET /api/tags - List all tags
 router.get('/tags', async (req, res) => {
   try {
-    const db = await getDb();
-    const result = db.exec("SELECT id, name FROM tags ORDER BY name");
-    const tags = result.length > 0 ? result[0].values.map(row => ({ id: row[0], name: row[1] })) : [];
-    db.close();
-
+    const result = await db.exec(
+      `SELECT t.id, t.name, COUNT(pt.post_id) as post_count
+       FROM tags t
+       LEFT JOIN post_tags pt ON t.id = pt.tag_id
+       LEFT JOIN posts p ON pt.post_id = p.id AND p.published = 1
+       GROUP BY t.id
+       ORDER BY post_count DESC, t.name`
+    );
+    const tags = result.length > 0 ? result[0].values.map((row) => ({ id: row[0], name: row[1], post_count: row[2] })) : [];
     res.json({ tags });
   } catch (err) {
+    console.error('List tags error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -415,33 +322,66 @@ router.get('/tags', async (req, res) => {
 router.post('/tags', requireAuth, async (req, res) => {
   try {
     const { name } = req.body;
-    if (!name) {
+    if (!name || !String(name).trim()) {
       return res.status(400).json({ error: 'Tag name is required' });
     }
-
-    const db = await getDb();
-    db.run("INSERT OR IGNORE INTO tags (name) VALUES (?)", [name.trim()]);
-    await saveDb(db);
-
+    await db.run('INSERT OR IGNORE INTO tags (name) VALUES (?)', [String(name).trim()]);
+    invalidatePublicCache();
     res.status(201).json({ message: 'Tag created' });
   } catch (err) {
+    console.error('Create tag error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// ===== UPLOAD ROUTE =====
+// ===== UPLOAD ROUTES =====
 
 // POST /api/upload - Upload image (admin)
 router.post('/upload', requireAuth, upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
-
   res.json({
     message: 'File uploaded successfully',
     filename: req.file.filename,
     path: '/uploads/' + req.file.filename
   });
+});
+
+// GET /api/uploads - List uploaded images (admin)
+router.get('/uploads', requireAuth, (req, res) => {
+  try {
+    const files = fs.readdirSync(UPLOAD_DIR)
+      .filter((f) => allowedTypesRegex.test(path.extname(f).toLowerCase()))
+      .map((name) => {
+        const stat = fs.statSync(path.join(UPLOAD_DIR, name));
+        return { name, size: stat.size, mtime: stat.mtime.toISOString(), url: '/uploads/' + name };
+      })
+      .sort((a, b) => b.mtime.localeCompare(a.mtime));
+    res.json({ uploads: files });
+  } catch (err) {
+    console.error('List uploads error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /api/uploads/:filename - Delete an uploaded image (admin)
+router.delete('/uploads/:filename', requireAuth, (req, res) => {
+  try {
+    const filename = path.basename(req.params.filename);
+    const filePath = path.join(UPLOAD_DIR, filename);
+    if (!filePath.startsWith(UPLOAD_DIR)) {
+      return res.status(400).json({ error: 'Invalid filename' });
+    }
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    fs.unlinkSync(filePath);
+    res.json({ message: 'File deleted', filename });
+  } catch (err) {
+    console.error('Delete upload error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // ===== PASSWORD CHANGE =====
@@ -456,14 +396,12 @@ router.put('/auth/password', requireAuth, async (req, res) => {
     }
 
     if (newPassword.length < (config.auth.minPasswordLength || 6)) {
-      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+      return res.status(400).json({ error: 'New password must be at least ' + (config.auth.minPasswordLength || 6) + ' characters' });
     }
 
-    const db = await getDb();
-    const result = db.exec("SELECT password_hash FROM users WHERE id = ?", [req.session.userId]);
+    const result = await db.exec('SELECT password_hash FROM users WHERE id = ?', [req.session.userId]);
 
     if (result.length === 0 || result[0].values.length === 0) {
-      db.close();
       return res.status(404).json({ error: 'User not found' });
     }
 
@@ -471,16 +409,15 @@ router.put('/auth/password', requireAuth, async (req, res) => {
     const valid = await bcrypt.compare(currentPassword, currentHash);
 
     if (!valid) {
-      db.close();
       return res.status(401).json({ error: 'Current password is incorrect' });
     }
 
     const newHash = await bcrypt.hash(newPassword, config.auth.bcryptRounds || 10);
-    db.run("UPDATE users SET password_hash = ? WHERE id = ?", [newHash, req.session.userId]);
-    await saveDb(db);
+    await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [newHash, req.session.userId]);
 
     res.json({ message: 'Password updated successfully' });
   } catch (err) {
+    console.error('Change password error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

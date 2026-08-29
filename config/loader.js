@@ -14,7 +14,16 @@ const defaults = {
     descriptionLong: "夏祭的个人前端试验场。每张「图纸」是一件独立的作品，探索前端技术的边界。",
     author: "夏祭",
     drawingPrefix: "FTS-BLOG",
-    readingTimeCharsPerMinute: 200
+    readingTimeCharsPerMinute: 200,
+    url: null
+  },
+  security: {
+    rateLimit: {
+      loginWindowMs: 15 * 60 * 1000,
+      loginMax: 20,
+      generalWindowMs: 60 * 1000,
+      generalMax: 300
+    }
   },
   author: {
     name: "夏祭",

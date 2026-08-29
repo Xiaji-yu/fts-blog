@@ -1,23 +1,12 @@
+'use strict';
 const express = require('express');
 const router = express.Router();
-const initSqlJs = require('sql.js');
-const path = require('path');
-const fs = require('fs');
 const bcrypt = require('bcrypt');
-const { requireAuthView } = require('../middleware/auth');
 const config = require('../config/loader');
-
-const DB_PATH = path.join(__dirname, '..', 'data', 'blog.db');
-
-// Helper to get database connection
-async function getDb() {
-  const SQL = await initSqlJs();
-  if (fs.existsSync(DB_PATH)) {
-    const fileBuffer = fs.readFileSync(DB_PATH);
-    return new SQL.Database(fileBuffer);
-  }
-  return new SQL.Database();
-}
+const db = require('../database/db');
+const { requireAuthView } = require('../middleware/auth');
+const { generateToken, csrfProtect } = require('../middleware/csrf');
+const { loginLimiter } = require('../middleware/rateLimit');
 
 // Decode HTML entities back to raw text
 function decodeHtmlEntities(text) {
@@ -43,51 +32,41 @@ router.get('/login', (req, res) => {
   });
 });
 
-// POST /admin/login
-router.post('/login', async (req, res) => {
+// POST /admin/login (exempt from CSRF; protected by loginLimiter)
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
+    const renderError = (error) => res.render('admin-login', {
+      title: config.admin.loginTitle || 'Admin Login',
+      error,
+      blueprint: config.features.blueprint,
+      nMark: config.features.nMark
+    });
+
     if (!username || !password) {
-      return res.render('admin-login', {
-        title: config.admin.loginTitle || 'Admin Login',
-        error: 'Username and password required',
-        blueprint: config.features.blueprint,
-        nMark: config.features.nMark
-      });
+      return renderError('Username and password required');
     }
 
-    const db = await getDb();
-    const result = db.exec("SELECT id, password_hash FROM users WHERE username = ?", [username]);
+    const result = await db.exec('SELECT id, password_hash FROM users WHERE username = ?', [username]);
 
     if (result.length === 0 || result[0].values.length === 0) {
-      db.close();
-      return res.render('admin-login', {
-        title: config.admin.loginTitle || 'Admin Login',
-        error: 'Invalid credentials',
-        blueprint: config.features.blueprint,
-        nMark: config.features.nMark
-      });
+      return renderError('Invalid credentials');
     }
 
     const [userId, passwordHash] = result[0].values[0];
     const valid = await bcrypt.compare(password, passwordHash);
 
     if (!valid) {
-      db.close();
-      return res.render('admin-login', {
-        title: config.admin.loginTitle || 'Admin Login',
-        error: 'Invalid credentials',
-        blueprint: config.features.blueprint,
-        nMark: config.features.nMark
-      });
+      return renderError('Invalid credentials');
     }
 
+    generateToken(req);
     req.session.userId = userId;
     req.session.username = username;
-    db.close();
 
     res.redirect('/admin');
   } catch (err) {
+    console.error('Admin login error:', err);
     res.render('admin-login', {
       title: config.admin.loginTitle || 'Admin Login',
       error: 'Server error',
@@ -97,19 +76,20 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Everything below requires a valid CSRF token for non-safe methods.
+router.use(csrfProtect);
+
 // GET /admin - Dashboard
 router.get('/', requireAuthView, async (req, res) => {
   try {
-    const db = await getDb();
-    const postsResult = db.exec("SELECT * FROM posts ORDER BY created_at DESC");
-    const posts = postsResult.length > 0 ? postsResult[0].values.map(row => ({
+    const postsResult = await db.exec('SELECT * FROM posts ORDER BY created_at DESC');
+    const posts = postsResult.length > 0 ? postsResult[0].values.map((row) => ({
       id: row[0],
       title: row[1],
       slug: row[3],
       published: row[7],
       created_at: row[8]
     })) : [];
-    db.close();
 
     res.render('admin-dashboard', {
       title: config.admin.dashboardTitle || 'Admin Dashboard',
@@ -119,6 +99,7 @@ router.get('/', requireAuthView, async (req, res) => {
       nMark: config.features.nMark
     });
   } catch (err) {
+    console.error('Dashboard error:', err);
     res.status(500).send('Server error');
   }
 });
@@ -137,22 +118,18 @@ router.get('/new', requireAuthView, (req, res) => {
 // GET /admin/edit/:id - Edit post
 router.get('/edit/:id', requireAuthView, async (req, res) => {
   try {
-    const db = await getDb();
-    const result = db.exec("SELECT * FROM posts WHERE id = ?", [req.params.id]);
+    const result = await db.exec('SELECT * FROM posts WHERE id = ?', [req.params.id]);
 
     if (result.length === 0 || result[0].values.length === 0) {
-      db.close();
       return res.status(404).send('Post not found');
     }
 
     const row = result[0].values[0];
-    const tagsResult = db.exec(
-      "SELECT t.name FROM tags t JOIN post_tags pt ON t.id = pt.tag_id WHERE pt.post_id = ?",
+    const tagsResult = await db.exec(
+      'SELECT t.name FROM tags t JOIN post_tags pt ON t.id = pt.tag_id WHERE pt.post_id = ?',
       [row[0]]
     );
-    const tags = tagsResult.length > 0 ? tagsResult[0].values.map(t => t[0]) : [];
-
-    db.close();
+    const tags = tagsResult.length > 0 ? tagsResult[0].values.map((t) => t[0]) : [];
 
     res.render('admin-editor', {
       title: config.admin.editor.titleEdit || 'Edit Post',
@@ -172,6 +149,7 @@ router.get('/edit/:id', requireAuthView, async (req, res) => {
       nMark: config.features.nMark
     });
   } catch (err) {
+    console.error('Edit post error:', err);
     res.status(500).send('Server error');
   }
 });
@@ -180,14 +158,11 @@ router.get('/edit/:id', requireAuthView, async (req, res) => {
 router.post('/preview', requireAuthView, (req, res) => {
   const body = req.body;
 
-  // Parse tags - handle both comma-separated string and array
   let tagList = [];
   if (body.tags) {
-    if (Array.isArray(body.tags)) {
-      tagList = body.tags.map(t => t.trim()).filter(t => t);
-    } else {
-      tagList = body.tags.split(',').map(t => t.trim()).filter(t => t);
-    }
+    tagList = Array.isArray(body.tags)
+      ? body.tags.map((t) => String(t).trim()).filter(Boolean)
+      : String(body.tags).split(',').map((t) => String(t).trim()).filter(Boolean);
   }
 
   const published = body.published === 'on' || body.published === true || body.published === 'true';
@@ -201,7 +176,7 @@ router.post('/preview', requireAuthView, (req, res) => {
       content: decodeHtmlEntities(body.content) || '',
       excerpt: body.excerpt || '',
       tags: tagList,
-      published: published,
+      published,
       created_at: new Date().toISOString()
     },
     username: req.session.username,

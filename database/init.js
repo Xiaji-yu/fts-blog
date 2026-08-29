@@ -1,89 +1,38 @@
+'use strict';
+/**
+ * Database initialization: apply migrations, ensure the default admin user
+ * exists, and seed sample posts if the database is empty.
+ * Called once from server.js at startup.
+ */
 const crypto = require('crypto');
-const initSqlJs = require('sql.js');
-const fs = require('fs');
-const path = require('path');
 const bcrypt = require('bcrypt');
 const config = require('../config/loader');
+const db = require('./db');
+const { migrate } = require('./migrations');
+const { seedIfEmpty } = require('./seed');
 
-const DB_PATH = path.join(__dirname, '..', 'data', 'blog.db');
+async function ensureAdminUser() {
+  return db.transaction(async (tx) => {
+    const username = config.auth.defaultUsername || 'admin';
+    const result = tx.exec('SELECT COUNT(*) AS count FROM users WHERE username = ?', [username]);
+    const count = result[0] ? result[0].values[0][0] : 0;
+    if (count > 0) return { created: false };
 
-async function initDatabase(config) {
-  config = config || require('../config/loader');
-
-  const SQL = await initSqlJs();
-
-  // Load existing database or create new one
-  let db;
-  if (fs.existsSync(DB_PATH)) {
-    const fileBuffer = fs.readFileSync(DB_PATH);
-    db = new SQL.Database(fileBuffer);
-  } else {
-    db = new SQL.Database();
-  }
-
-  // Create tables
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      role TEXT DEFAULT 'admin',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS posts (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      title TEXT NOT NULL,
-      title_en TEXT,
-      slug TEXT UNIQUE NOT NULL,
-      content TEXT NOT NULL,
-      excerpt TEXT,
-      cover_image TEXT,
-      published BOOLEAN DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS tags (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE NOT NULL
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS post_tags (
-      post_id INTEGER REFERENCES posts(id),
-      tag_id INTEGER REFERENCES tags(id),
-      PRIMARY KEY (post_id, tag_id)
-    )
-  `);
-
-  // Seed admin user if not exists
-  const result = db.exec("SELECT COUNT(*) as count FROM users WHERE username = 'admin'");
-  if (result.length === 0 || result[0].values[0][0] === 0) {
     const randomPassword = (config.auth.defaultPasswordPrefix || 'admin') + '-' + crypto.randomBytes(6).toString('hex');
     const hash = await bcrypt.hash(randomPassword, config.auth.bcryptRounds || 10);
-    db.run("INSERT INTO users (username, password_hash) VALUES (?, ?)", [config.auth.defaultUsername || 'admin', hash]);
-    console.log('✓ Admin user created (username: admin, password: ' + randomPassword + ')');
+    tx.run('INSERT INTO users (username, password_hash) VALUES (?, ?)', [username, hash]);
+    console.log(`✓ Admin user created (username: ${username}, password: ${randomPassword})`);
     console.log('⚠ 请妥善保管此密码，登录后请立即修改');
-  }
-
-  // Save database
-  const data = db.export();
-  const buffer = Buffer.from(data);
-  fs.writeFileSync(DB_PATH, buffer);
-  console.log('✓ Database initialized at', DB_PATH);
-
-  db.close();
+    return { created: true, password: randomPassword };
+  });
 }
 
-module.exports = { initDatabase };
+async function initDatabase() {
+  await migrate();
+  await ensureAdminUser();
+  await seedIfEmpty();
+  console.log('✓ Database ready at', db.databasePath());
+  return db.databasePath();
+}
 
-initDatabase().catch(err => {
-  console.error('Database initialization failed:', err);
-  process.exit(1);
-});
+module.exports = { initDatabase, ensureAdminUser };
