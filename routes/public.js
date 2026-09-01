@@ -51,7 +51,54 @@ async function fetchPublishedPosts({ tag, limit, offset, search }) {
     cover_image: row[6],
     created_at: row[8],
     view_count: row[10] !== undefined ? row[10] : 0,
+    read_time: Math.max(1, Math.ceil((row[4] ? row[4].length : 0) / (config.site.readingTimeCharsPerMinute || 200))),
     tags: row[11] ? row[11].split(',') : []
+  }));
+}
+
+/**
+ * Aggregate "blueprint library" stats for the homepage status panel.
+ * Single query, cached at the route level like the post list itself.
+ */
+async function fetchSiteStats() {
+  const sql = `
+    SELECT
+      (SELECT COUNT(*) FROM posts p WHERE p.published = 1) AS post_count,
+      (SELECT COUNT(DISTINCT t.id) FROM tags t
+         JOIN post_tags pt ON t.id = pt.tag_id
+         JOIN posts p ON p.id = pt.post_id
+       WHERE p.published = 1) AS tag_count,
+      (SELECT COALESCE(SUM(view_count), 0) FROM posts p WHERE p.published = 1) AS view_total,
+      (SELECT COALESCE(SUM(LENGTH(content)), 0) FROM posts p WHERE p.published = 1) AS char_total,
+      (SELECT MAX(updated_at) FROM posts p WHERE p.published = 1) AS last_updated
+  `;
+  const result = await db.exec(sql);
+  if (result.length === 0) return null;
+  const row = result[0].values[0];
+  return {
+    postCount: row[0],
+    tagCount: row[1],
+    viewTotal: row[2],
+    charTotal: row[3],
+    lastUpdated: row[4] || null
+  };
+}
+
+/** Most-viewed published posts, used for the "hot drawings" strip. */
+async function fetchHotPosts(limit = 3) {
+  const result = await db.exec(
+    `SELECT id, title, view_count
+     FROM posts
+     WHERE published = 1
+     ORDER BY view_count DESC, created_at DESC, id DESC
+     LIMIT ?`,
+    [limit]
+  );
+  if (result.length === 0) return [];
+  return result[0].values.map((row) => ({
+    id: row[0],
+    title: row[1],
+    view_count: row[2]
   }));
 }
 
@@ -98,11 +145,13 @@ router.get('/', async (req, res) => {
 
     let data = cache.get(cacheKey);
     if (!data) {
-      const [posts, total] = await Promise.all([
+      const [posts, total, stats, hotPosts] = await Promise.all([
         fetchPublishedPosts({ limit, offset: (page - 1) * limit }),
-        countPublished({})
+        countPublished({}),
+        fetchSiteStats(),
+        fetchHotPosts(3)
       ]);
-      data = { posts, total };
+      data = { posts, total, stats, hotPosts };
       cache.set(cacheKey, data);
     }
 
@@ -112,6 +161,8 @@ router.get('/', async (req, res) => {
       title: `${config.site.name} · ${config.site.tagline}`,
       posts: data.posts,
       postCount: data.total,
+      stats: data.stats,
+      hotPosts: data.hotPosts,
       pagination: { page, limit, pages, hasPrev: page > 1, hasNext: page < pages },
       blueprint: config.features.blueprint,
       nMark: config.features.nMark
@@ -274,6 +325,20 @@ router.get('/search', async (req, res) => {
   } catch (err) {
     console.error('Search error:', err);
     res.status(500).send('Server error');
+  }
+});
+
+// GET /random - Jump to a random published post (fun way to rediscover content)
+router.get('/random', async (req, res) => {
+  try {
+    const result = await db.exec('SELECT id FROM posts WHERE published = 1 ORDER BY RANDOM() LIMIT 1');
+    if (result.length === 0 || result[0].values.length === 0) {
+      return res.redirect('/');
+    }
+    res.redirect('/post/' + result[0].values[0][0]);
+  } catch (err) {
+    console.error('Random post error:', err);
+    res.redirect('/');
   }
 });
 

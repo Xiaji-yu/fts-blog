@@ -16,6 +16,8 @@
   <meta name="twitter:card" content="summary">
 </head>
 <body>
+  <div id="scrollProgress" class="scroll-progress" aria-hidden="true"></div>
+
   <% if (nMark) { %>
   <div class="n-marker">N</div>
   <% } %>
@@ -24,4 +26,19 @@
   <div class="container-wide">
   <% } else { %>
   <div class="container">
+  <% } %>
+
+  <% // Public nav only — admin pages under /admin render their own FTS-ADMIN nav. %>
+  <% if (typeof currentPath === 'undefined' || !currentPath.startsWith('/admin')) { %>
+  <nav class="nav" aria-label="主导航">
+    <a href="/" class="nav-brand">
+      <%= config.site.shortName %> · <span class="nav-brand-sub"><%= config.blueprint.prefix %>-LIB</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/') ? 'active' : '' %>">首页 · INDEX</a></li>
+      <li><a href="/tags" class="<%= (typeof currentPath !== 'undefined' && (currentPath === '/tags' || currentPath.startsWith('/tag/'))) ? 'active' : '' %>">标签 · TAGS</a></li>
+      <li><a href="/search" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/search') ? 'active' : '' %>">搜索 · SEARCH</a></li>
+      <li><a href="/feed.xml">RSS</a></li>
+    </ul>
+  </nav>
   <% } %>

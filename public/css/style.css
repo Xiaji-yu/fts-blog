@@ -354,6 +354,17 @@ body::after {
   letter-spacing: 0.06em;
   flex-shrink: 0;
   margin-left: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+
+.card-stats {
+  font-size: 0.62rem;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .card-excerpt {
@@ -983,5 +994,297 @@ body::after {
 
   .post-layout {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   Homepage enhancements · Navigation / Status / Hot / Gadgets
+   ═══════════════════════════════════════════ */
+
+/* ── Nav active state ── */
+.nav-links a.active {
+  color: var(--fg);
+  text-shadow: 0 0 8px rgba(100, 200, 255, 0.5);
+}
+
+.nav-brand-sub {
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+/* ── Scroll progress bar ── */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0;
+  background: linear-gradient(90deg, var(--accent), #ffb347);
+  box-shadow: 0 0 12px var(--accent-glow);
+  z-index: 1000;
+  pointer-events: none;
+  transition: width 80ms linear;
+}
+
+/* ── Back to top ── */
+.back-to-top {
+  position: fixed;
+  right: var(--spacing-md);
+  bottom: var(--spacing-md);
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--border-strong);
+  background: rgba(10, 25, 41, 0.85);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: all 0.25s ease;
+  z-index: 900;
+  backdrop-filter: blur(6px);
+}
+
+.back-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.back-to-top:hover {
+  border-color: var(--fg);
+  box-shadow: 0 0 18px rgba(100, 200, 255, 0.25);
+}
+
+/* ── Hero actions: search + random ── */
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin: 0 0 var(--spacing-md);
+}
+
+.hero-search {
+  display: flex;
+  gap: var(--spacing-xs);
+  min-width: min(480px, 100%);
+}
+
+.hero-search .form-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.btn-random {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(255, 107, 53, 0.06);
+}
+
+.btn-random:hover {
+  background: rgba(255, 107, 53, 0.18);
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* ── Status panel ── */
+.status-panel {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  border: 1px dashed var(--border-strong);
+  background: var(--border);
+  margin: var(--spacing-md) auto var(--spacing-lg);
+  max-width: 1100px;
+}
+
+.status-item {
+  background: rgba(10, 25, 41, 0.9);
+  padding: var(--spacing-sm);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.status-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.status-value {
+  font-family: var(--font-mono);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--fg);
+  letter-spacing: 0.06em;
+  text-shadow: 0 0 12px rgba(100, 200, 255, 0.25);
+}
+
+/* ── Hot drawings strip ── */
+.hot-section {
+  margin: 0 auto var(--spacing-lg);
+  max-width: 1100px;
+}
+
+.section-heading {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+}
+
+.section-heading .label {
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.hot-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.hot-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  border: 1px dashed var(--border);
+  background: var(--bg-card);
+  padding: var(--spacing-sm);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  min-width: 0;
+}
+
+.hot-item:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-hover);
+  box-shadow: 0 0 18px rgba(100, 200, 255, 0.1);
+}
+
+.hot-rank {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.hot-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.hot-title {
+  color: var(--fg);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.hot-views {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+/* ── Typewriter caret ── */
+.typewriter {
+  min-height: 1.4em;
+}
+
+.typewriter::after {
+  content: '▍';
+  margin-left: 2px;
+  color: var(--accent);
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+@keyframes caret-blink {
+  50% { opacity: 0; }
+}
+
+/* ── Scanner sweep across the homepage title block ── */
+.homepage-content .title-block {
+  overflow: hidden;
+}
+
+.homepage-content .title-block::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10%;
+  height: 8%;
+  background: linear-gradient(180deg, transparent, rgba(100, 200, 255, 0.12), transparent);
+  animation: scan-sweep 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes scan-sweep {
+  0% { top: -10%; }
+  55%, 100% { top: 110%; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .hot-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .status-panel {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .status-item:last-child {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-search {
+    min-width: 0;
+  }
+
+  .btn-random {
+    justify-content: center;
+  }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .homepage-content .title-block::after,
+  .typewriter::after {
+    animation: none;
+  }
+
+  .back-to-top,
+  .scroll-progress {
+    transition: none;
   }
 }

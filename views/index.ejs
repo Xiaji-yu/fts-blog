@@ -26,15 +26,64 @@
 <div class="title-block">
   <h1 class="main-title"><%= config.site.name %></h1>
   <h2 class="sub-title"><%= config.site.description %></h2>
-  <p class="sub-title-en"><%= config.site.tagline %></p>
+  <p class="sub-title-en typewriter" id="typewriterLine" data-text="<%= config.site.tagline %>"><%= config.site.tagline %></p>
 </div>
 
 <hr class="divider">
 
 <div class="spec-block">
-  <p><span class="label">图号</span> <strong><%= config.blueprint.prefix %>-INDEX</strong> · 比例 1:1</p>
-  <p>共 <strong><%= postCount %></strong> 张图纸 · 持续增补</p>
+  <p><span class="label">图号</span> <strong><%= config.blueprint.prefix %>-INDEX</strong> · 比例 1:1 · <span class="label">状态</span> <strong>ONLINE</strong></p>
 </div>
+
+<div class="hero-actions">
+  <form method="GET" action="/search" class="hero-search" role="search">
+    <input type="search" name="q" class="form-input" placeholder="搜索图纸 · SEARCH DRAWINGS…" aria-label="站内搜索" required>
+    <button type="submit" class="btn btn-sm">搜索 · GO</button>
+  </form>
+  <a href="/random" class="btn btn-sm btn-random" title="随机跳转到一张图纸">🎲 随机图纸 · RANDOM</a>
+</div>
+
+<% if (stats) { %>
+<div class="status-panel" aria-label="图纸库统计">
+  <div class="status-item">
+    <span class="status-label">图纸 · SHEETS</span>
+    <span class="status-value"><%= stats.postCount %></span>
+  </div>
+  <div class="status-item">
+    <span class="status-label">标签 · TAGS</span>
+    <span class="status-value"><%= stats.tagCount %></span>
+  </div>
+  <div class="status-item">
+    <span class="status-label">总浏览 · VIEWS</span>
+    <span class="status-value"><%= new Intl.NumberFormat('en-US').format(stats.viewTotal) %></span>
+  </div>
+  <div class="status-item">
+    <span class="status-label">总字数 · CHARS</span>
+    <span class="status-value"><%= new Intl.NumberFormat('en-US').format(stats.charTotal) %></span>
+  </div>
+  <div class="status-item">
+    <span class="status-label">最后更新 · UPDATED</span>
+    <span class="status-value"><%= stats.lastUpdated ? new Date(stats.lastUpdated).toLocaleDateString('zh-CN') : '—' %></span>
+  </div>
+</div>
+<% } %>
+
+<% if (typeof hotPosts !== 'undefined' && hotPosts.length > 0) { %>
+<section class="hot-section" aria-label="热门图纸">
+  <div class="section-heading"><span class="label">热门图纸</span> HOT · TOP VIEWED</div>
+  <div class="hot-strip">
+    <% hotPosts.forEach((post, index) => { %>
+    <a href="/post/<%= post.id %>" class="hot-item">
+      <span class="hot-rank"><%= String(index + 1).padStart(2, '0') %></span>
+      <span class="hot-body">
+        <span class="hot-title"><%= post.title %></span>
+        <span class="hot-views"><%= new Intl.NumberFormat('en-US').format(post.view_count) %> VIEWS</span>
+      </span>
+    </a>
+    <% }) %>
+  </div>
+</section>
+<% } %>
 
 <div class="description">
   <%= config.site.descriptionLong %>
@@ -59,7 +108,8 @@
         <% } %>
       </div>
       <div class="card-meta">
-        <%= new Date(post.created_at).toLocaleDateString('zh-CN') %>
+        <div><%= new Date(post.created_at).toLocaleDateString('zh-CN') %></div>
+        <div class="card-stats">⏱ <%= post.read_time %> MIN · <%= new Intl.NumberFormat('en-US').format(post.view_count) %> VIEWS</div>
       </div>
     </div>
 

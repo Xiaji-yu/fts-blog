@@ -106,6 +106,25 @@ test('public endpoints respond', async () => {
   assert.match(searchText, /SQLite/);
 });
 
+test('homepage shows nav, status panel, hero actions and hot strip', async () => {
+  const res = await request('GET', '/');
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /nav-links/, 'top navigation rendered');
+  assert.match(html, /status-panel/, 'stats panel rendered');
+  assert.match(html, /hero-actions/, 'hero search/random actions rendered');
+  assert.match(html, /随机图纸|RANDOM/, 'random button rendered');
+  assert.match(html, /hot-section/, 'hot drawings strip rendered');
+});
+
+test('random redirects to a published post (or home when none)', async () => {
+  const res = await request('GET', '/random');
+  assert.equal(res.status, 200); // 302 followed to the target post
+  assert.match(res.url, /\/post\/\d+$/, 'landed on a post page, got: ' + res.url);
+  const html = await res.text();
+  assert.match(html, /hljs|title-block/, 'post page rendered');
+});
+
 test('login then CSRF-protected post creation works end to end', async () => {
   const tokenBeforeLogin = await getCsrfFrom('/admin/login');
 

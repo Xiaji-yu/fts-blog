@@ -136,6 +136,12 @@ app.use(session({
 // Expose a per-session CSRF token to every template.
 app.use(attachCsrf);
 
+// Expose the current request path to templates (used for nav active states).
+app.use((req, res, next) => {
+  res.locals.currentPath = req.path;
+  next();
+});
+
 // ---------- View engine ----------
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
