@@ -54,7 +54,9 @@ function withTimeout(promise, ms = SAVE_TIMEOUT_MS) {
 
 async function persist() {
   const data = db.export();
-  await withTimeout(fs.promises.writeFile(DB_PATH, Buffer.from(data)));
+  const tmpPath = DB_PATH + '.tmp';
+  await fs.promises.writeFile(tmpPath, Buffer.from(data));
+  await fs.promises.rename(tmpPath, DB_PATH);
 }
 
 function enqueue(task) {

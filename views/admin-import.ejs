@@ -345,10 +345,10 @@ if (scanBtn) {
         html += '<a href="/admin" class="btn btn-outline btn-sm" style="margin-top: 1rem; display: inline-flex;">→ 返回管理后台</a>';
         statusDiv.innerHTML = html;
       } else {
-        statusDiv.innerHTML = `<p style="color: var(--accent);">错误: ${result.error}</p>`;
+        statusDiv.innerHTML = `<p style="color: var(--accent);">错误: ${esc(result.error)}</p>`;
       }
     } catch (err) {
-      statusDiv.innerHTML = `<p style="color: var(--accent);">扫描失败: ${err.message}</p>`;
+      statusDiv.innerHTML = `<p style="color: var(--accent);">扫描失败: ${esc(err.message)}</p>`;
     } finally {
       scanBtn.disabled = false;
       scanBtn.textContent = '扫描经验目录 · SCAN & IMPORT';
@@ -403,10 +403,10 @@ importBtn.addEventListener('click', async () => {
         <a href="/admin" class="btn btn-outline btn-sm" style="margin-top: 1rem; display: inline-flex;">→ 返回管理后台</a>
       `;
     } else {
-      statusDiv.innerHTML = `<p style="color: var(--accent);">错误: ${result.error}</p>`;
+      statusDiv.innerHTML = `<p style="color: var(--accent);">错误: ${esc(result.error)}</p>`;
     }
   } catch (err) {
-    statusDiv.innerHTML = `<p style="color: var(--accent);">导入失败: ${err.message}</p>`;
+    statusDiv.innerHTML = `<p style="color: var(--accent);">导入失败: ${esc(err.message)}</p>`;
   } finally {
     importBtn.disabled = false;
     importBtn.textContent = '开始导入 · START IMPORT →';

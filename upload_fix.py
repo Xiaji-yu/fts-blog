@@ -30,7 +30,7 @@ def main():
     # ============================================================
     print('\n--- Uploading routes/import.js ---')
     local_path = r'D:\code\blog\fts-blog\routes\import.js'
-    remote_path = '/var/www/blog/routes/import.js'
+    remote_path = '/var/www/fts-blog/routes/import.js'
 
     with open(local_path, 'r', encoding='utf-8') as f:
         local_content = f.read()
@@ -58,10 +58,10 @@ print('Uploaded import.js successfully')
     if err: print('ERR:', err)
 
     # Verify
-    out, _ = ssh_exec(client, "grep OBSIDIAN /var/www/blog/routes/import.js")
+    out, _ = ssh_exec(client, "grep OBSIDIAN /var/www/fts-blog/routes/import.js")
     print('OBSIDIAN_DIR on server:', out)
 
-    out, _ = ssh_exec(client, "grep -c 'import/directory' /var/www/blog/routes/import.js")
+    out, _ = ssh_exec(client, "grep -c 'import/directory' /var/www/fts-blog/routes/import.js")
     print('Directory route count:', out)
 
     # ============================================================
@@ -69,7 +69,7 @@ print('Uploaded import.js successfully')
     # ============================================================
     print('\n--- Uploading views/admin-import.ejs ---')
     local_path = r'D:\code\blog\fts-blog\views\admin-import.ejs'
-    remote_path = '/var/www/blog/views/admin-import.ejs'
+    remote_path = '/var/www/fts-blog/views/admin-import.ejs'
 
     with open(local_path, 'r', encoding='utf-8') as f:
         local_content = f.read()
@@ -94,10 +94,10 @@ print('Uploaded admin-import.ejs successfully')
     if err: print('ERR:', err)
 
     # Verify
-    out, _ = ssh_exec(client, "grep -c 'scanBtn' /var/www/blog/views/admin-import.ejs")
+    out, _ = ssh_exec(client, "grep -c 'scanBtn' /var/www/fts-blog/views/admin-import.ejs")
     print('scanBtn count:', out)
 
-    out, _ = ssh_exec(client, "grep -c '经验/' /var/www/blog/views/admin-import.ejs")
+    out, _ = ssh_exec(client, "grep -c '经验/' /var/www/fts-blog/views/admin-import.ejs")
     print('经验 references:', out)
 
     # ============================================================

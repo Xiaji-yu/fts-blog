@@ -42,6 +42,15 @@ pm2 restart blog        # 重启
 pm2 stop blog           # 停止
 pm2 delete blog         # 删除进程
 
+# 更新代码
+cd /var/www/fts-blog
+git pull origin main
+npm ci --omit=dev
+pm2 restart blog
+
+> **重要**: `git pull` 只会拉取代码，**不会**自动安装新的依赖包。
+> 新增依赖（如 `highlight.js`、`express-rate-limit`）必须执行 `npm ci --omit=dev`（或 `npm install --production`）后才能启动，否则会报 `Cannot find module 'highlight.js'` 类似错误。
+
 # 开机自启
 pm2 startup && pm2 save
 ```

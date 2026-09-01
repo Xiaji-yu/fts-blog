@@ -4,7 +4,7 @@
   "description": "夏祭博客 · Xiaji's Blog — Engineering Blueprint Aesthetic",
   "main": "server.js",
   "engines": {
-    "node": ">=18.14"
+    "node": ">=20.19.0"
   },
   "scripts": {
     "start": "node server.js",

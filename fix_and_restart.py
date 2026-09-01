@@ -25,23 +25,23 @@ def main():
 
     # Fix garbled Chinese in import.js
     out, err = ssh_exec(client, 'python3 -c "'
-        "with open(\"/var/www/blog/routes/import.js\", \"r\") as f: content = f.read()"
+        "with open(\"/var/www/fts-blog/routes/import.js\", \"r\") as f: content = f.read()"
         " content = content.replace(\"path.join(__dirname, '..', '����')\", \"path.join(__dirname, '..', '经验')\")"
-        " with open(\"/var/www/blog/routes/import.js\", \"w\") as f: f.write(content)"
+        " with open(\"/var/www/fts-blog/routes/import.js\", \"w\") as f: f.write(content)"
         " print('Fixed OBSIDIAN_DIR encoding')"
     '"')
     print('Fix encoding:', out, err)
 
     # Verify
-    out, _ = ssh_exec(client, "grep OBSIDIAN /var/www/blog/routes/import.js")
+    out, _ = ssh_exec(client, "grep OBSIDIAN /var/www/fts-blog/routes/import.js")
     print('OBSIDIAN_DIR:', out)
 
     # Fix garbled Chinese in admin-import.ejs
     out, err = ssh_exec(client, 'python3 -c "'
-        "with open(\"/var/www/blog/views/admin-import.ejs\", \"r\") as f: content = f.read()"
+        "with open(\"/var/www/fts-blog/views/admin-import.ejs\", \"r\") as f: content = f.read()"
         " content = content.replace('草粉', '经验')"
         " content = content.replace('草粉', '经验')"
-        " with open(\"/var/www/blog/views/admin-import.ejs\", \"w\") as f: f.write(content)"
+        " with open(\"/var/www/fts-blog/views/admin-import.ejs\", \"w\") as f: f.write(content)"
         " print('Fixed ejs encoding')"
     '"')
     print('Fix ejs:', out, err)

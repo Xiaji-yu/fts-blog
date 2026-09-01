@@ -14,8 +14,8 @@ except ImportError as e:
     raise SystemExit('deploy_config.py exists but is missing HOST/USER/PASS — add the missing variable(s) and retry.') from e
 
 FILES = [
-    (r'D:\code\blog\fts-blog\routes\import.js', '/var/www/blog/routes/import.js'),
-    (r'D:\code\blog\fts-blog\views\admin-import.ejs', '/var/www/blog/views/admin-import.ejs'),
+    (r'D:\code\blog\fts-blog\routes\import.js', '/var/www/fts-blog/routes/import.js'),
+    (r'D:\code\blog\fts-blog\views\admin-import.ejs', '/var/www/fts-blog/views/admin-import.ejs'),
 ]
 
 def ssh_exec(client, cmd):

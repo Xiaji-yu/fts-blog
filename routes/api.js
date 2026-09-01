@@ -275,14 +275,22 @@ async function insertTags(tx, postId, tagList) {
 // PUT /api/posts/:id - Update post (admin)
 router.put('/posts/:id', requireAuth, async (req, res) => {
   try {
+    const postId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(postId) || postId <= 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
     const { title, title_en, slug, content, excerpt, published, tags } = req.body;
-    const postId = req.params.id;
 
     const validationError = validatePostInput({ title, slug, content });
     if (validationError) return res.status(400).json({ error: validationError });
 
+    const existing = await db.exec('SELECT id FROM posts WHERE id = ?', [postId]);
+    if (!existing.length || existing[0].values.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
     const now = new Date().toISOString();
-    // published comes as "on" from checkbox or boolean
     const publishedVal = (published === 'on' || published === true || published === 'true') ? 1 : 0;
 
     await db.transaction(async (tx) => {
@@ -308,9 +316,19 @@ router.put('/posts/:id', requireAuth, async (req, res) => {
 // DELETE /api/posts/:id - Delete post (admin)
 router.delete('/posts/:id', requireAuth, async (req, res) => {
   try {
+    const postId = parseInt(req.params.id, 10);
+    if (!Number.isInteger(postId) || postId <= 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const existing = await db.exec('SELECT id FROM posts WHERE id = ?', [postId]);
+    if (!existing.length || existing[0].values.length === 0) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
     await db.transaction(async (tx) => {
-      tx.run('DELETE FROM post_tags WHERE post_id = ?', [req.params.id]);
-      tx.run('DELETE FROM posts WHERE id = ?', [req.params.id]);
+      tx.run('DELETE FROM post_tags WHERE post_id = ?', [postId]);
+      tx.run('DELETE FROM posts WHERE id = ?', [postId]);
     });
     invalidatePublicCache();
     res.json({ message: 'Post deleted' });

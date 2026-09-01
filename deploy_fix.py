@@ -37,7 +37,7 @@ def main():
 
     # Add OBSIDIAN_DIR constant after UPLOAD_DIR
     ssh_exec(client, """sed -i "/const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');/a\\
-const OBSIDIAN_DIR = path.join(__dirname, '..', '经验');" /var/www/blog/routes/import.js""",
+const OBSIDIAN_DIR = path.join(__dirname, '..', '经验');" /var/www/fts-blog/routes/import.js""",
              'Add OBSIDIAN_DIR constant')
 
     # Add normalizeYamlValue helper + POST /admin/import/directory route
@@ -157,7 +157,7 @@ echo "Written new route to /tmp/new_directory_route.js""", 'Prepare new director
     ssh_exec(client, r"""python3 -c "
 import re
 
-with open('/var/www/blog/routes/import.js', 'r') as f:
+with open('/var/www/fts-blog/routes/import.js', 'r') as f:
     content = f.read()
 
 with open('/tmp/new_directory_route.js', 'r') as f:
@@ -168,7 +168,7 @@ pattern = r'(\/\/ POST \/admin\/import - Process imported files)'
 replacement = new_route + '\n\\1'
 content = re.sub(pattern, replacement, content)
 
-with open('/var/www/blog/routes/import.js', 'w') as f:
+with open('/var/www/fts-blog/routes/import.js', 'w') as f:
     f.write(content)
 
 print('Directory route inserted successfully')
@@ -179,7 +179,7 @@ print('Directory route inserted successfully')
     ssh_exec(client, r"""python3 -c "
 import re
 
-with open('/var/www/blog/routes/import.js', 'r') as f:
+with open('/var/www/fts-blog/routes/import.js', 'r') as f:
     content = f.read()
 
 old_parse = '''// Helper: Parse YAML frontmatter from markdown
@@ -265,7 +265,7 @@ else:
     else:
         print('WARNING: parseFrontmatter not found!')
 
-with open('/var/www/blog/routes/import.js', 'w') as f:
+with open('/var/www/fts-blog/routes/import.js', 'w') as f:
     f.write(content)
 "
 """, 'Verify parseFrontmatter is correct')
@@ -276,7 +276,7 @@ with open('/var/www/blog/routes/import.js', 'w') as f:
 
     # Add scan button before the upload zone
     ssh_exec(client, r"""python3 -c "
-with open('/var/www/blog/views/admin-import.ejs', 'r') as f:
+with open('/var/www/fts-blog/views/admin-import.ejs', 'r') as f:
     content = f.read()
 
 old_marker = '  <div class=\"upload-zone\" id=\"dropZone\">'
@@ -297,14 +297,14 @@ if old_marker in content:
 else:
     print('ERROR: upload zone marker not found!')
 
-with open('/var/www/blog/views/admin-import.ejs', 'w') as f:
+with open('/var/www/fts-blog/views/admin-import.ejs', 'w') as f:
     f.write(content)
 "
 """, 'Insert scan directory button in admin-import.ejs')
 
     # Add scan button JavaScript handler
     ssh_exec(client, r"""python3 -c "
-with open('/var/www/blog/views/admin-import.ejs', 'r') as f:
+with open('/var/www/fts-blog/views/admin-import.ejs', 'r') as f:
     content = f.read()
 
 old_marker = '// Import button'
@@ -365,7 +365,7 @@ if old_marker in content:
 else:
     print('ERROR: Import button marker not found!')
 
-with open('/var/www/blog/views/admin-import.ejs', 'w') as f:
+with open('/var/www/fts-blog/views/admin-import.ejs', 'w') as f:
     f.write(content)
 "
 """, 'Insert scan button JavaScript in admin-import.ejs')
@@ -373,10 +373,10 @@ with open('/var/www/blog/views/admin-import.ejs', 'w') as f:
     # ============================================================
     # 3. Verify changes
     # ============================================================
-    ssh_exec(client, 'head -16 /var/www/blog/routes/import.js', 'Verify import.js head')
-    ssh_exec(client, "grep -c 'import/directory' /var/www/blog/routes/import.js", 'Count directory route references')
-    ssh_exec(client, "grep -c 'scanBtn' /var/www/blog/views/admin-import.ejs", 'Count scanBtn references')
-    ssh_exec(client, "grep -c '经验/' /var/www/blog/views/admin-import.ejs", 'Count 经验 references in ejs')
+    ssh_exec(client, 'head -16 /var/www/fts-blog/routes/import.js', 'Verify import.js head')
+    ssh_exec(client, "grep -c 'import/directory' /var/www/fts-blog/routes/import.js", 'Count directory route references')
+    ssh_exec(client, "grep -c 'scanBtn' /var/www/fts-blog/views/admin-import.ejs", 'Count scanBtn references')
+    ssh_exec(client, "grep -c '经验/' /var/www/fts-blog/views/admin-import.ejs", 'Count 经验 references in ejs')
 
     # ============================================================
     # 4. Restart blog
