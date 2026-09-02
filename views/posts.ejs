@@ -1,4 +1,4 @@
-<%- include('partials/header', { title: title, wide: true }) %>
+<%- include('partials/header', { title: title, wide: true, splashBrand: '全部图纸', splashSub: 'ALL POSTS', splashTagline: '共 ' + postCount + ' 篇 · ARCHIVE' }) %>
 
 <style>
   .posts-page .post-list-item {
@@ -46,87 +46,5 @@
 </div>
 
 </div>
-
-<script>
-(function () {
-  var viewport = document.getElementById('drumViewport');
-  var track = document.getElementById('drumTrack');
-  if (!viewport || !track) return;
-
-  var items = track.querySelectorAll('.drum-item');
-  if (!items.length) return;
-
-  var itemHeight = 80;
-  var currentIndex = 0;
-
-  function getVisibleCount() {
-    return Math.max(1, Math.floor(viewport.clientHeight / itemHeight));
-  }
-
-  function updateDrum() {
-    var visible = getVisibleCount();
-    var offset = currentIndex * itemHeight;
-    var center = (viewport.clientHeight - itemHeight) / 2;
-    track.style.transform = 'translateY(' + (center - offset) + 'px)';
-    items.forEach(function (item, i) {
-      item.classList.toggle('active', i === currentIndex);
-      item.setAttribute('aria-selected', i === currentIndex ? 'true' : 'false');
-    });
-  }
-
-  function setIndex(next) {
-    next = Math.max(0, Math.min(items.length - 1, next));
-    if (next !== currentIndex) {
-      currentIndex = next;
-      updateDrum();
-    }
-  }
-
-  viewport.addEventListener('wheel', function (e) {
-    e.preventDefault();
-    if (e.deltaY > 0) setIndex(currentIndex + 1);
-    if (e.deltaY < 0) setIndex(currentIndex - 1);
-  }, { passive: false });
-
-  document.addEventListener('keydown', function (e) {
-    if (document.activeElement !== viewport) return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); setIndex(currentIndex + 1); }
-    if (e.key === 'ArrowUp') { e.preventDefault(); setIndex(currentIndex - 1); }
-  });
-
-  var touchStartY = 0;
-  viewport.addEventListener('touchstart', function (e) {
-    touchStartY = e.touches[0].clientY;
-  }, { passive: true });
-
-  viewport.addEventListener('touchend', function (e) {
-    var diff = touchStartY - e.changedTouches[0].clientY;
-    if (Math.abs(diff) > 24) {
-      if (diff > 0) setIndex(currentIndex + 1);
-      if (diff < 0) setIndex(currentIndex - 1);
-    }
-  }, { passive: true });
-
-  viewport.addEventListener('click', function (e) {
-    var item = e.target.closest('.drum-item');
-    if (!item) return;
-    var idx = parseInt(item.getAttribute('data-index'), 10);
-    if (!isNaN(idx)) {
-      currentIndex = idx;
-      updateDrum();
-    }
-  });
-
-  viewport.addEventListener('dblclick', function (e) {
-    var item = e.target.closest('.drum-item');
-    if (item) {
-      e.preventDefault();
-      window.location.href = item.getAttribute('href');
-    }
-  });
-
-  updateDrum();
-})();
-</script>
 
 <%- include('partials/footer') %>

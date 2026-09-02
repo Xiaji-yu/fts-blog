@@ -16,12 +16,13 @@
   <meta name="twitter:card" content="summary">
 </head>
 <body>
+  <% if (typeof noSplash === 'undefined' || !noSplash) { %>
   <div id="pageSplash" class="page-splash" aria-hidden="true">
     <div class="page-splash-grid" aria-hidden="true"></div>
     <div class="page-splash-inner">
-      <div class="page-splash-brand"><%= config.site.name %></div>
-      <div class="page-splash-sub"><%= config.site.description %></div>
-      <div class="page-splash-tagline"><%= config.site.tagline %></div>
+      <div class="page-splash-brand"><%= typeof splashBrand !== 'undefined' ? splashBrand : config.site.name %></div>
+      <div class="page-splash-sub"><%= typeof splashSub !== 'undefined' ? splashSub : config.site.description %></div>
+      <div class="page-splash-tagline"><%= typeof splashTagline !== 'undefined' ? splashTagline : config.site.tagline %></div>
       <div class="page-splash-bar-wrap">
         <div class="page-splash-bar" id="splashBar"></div>
       </div>
@@ -32,6 +33,7 @@
     </div>
     <div class="page-splash-n">N</div>
   </div>
+  <% } %>
   <div id="scrollProgress" class="scroll-progress" aria-hidden="true"></div>
 
   <% if (nMark) { %>

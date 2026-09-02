@@ -24,7 +24,7 @@
     var drumTrack = document.getElementById('drumTrack');
     var drumItems = drumTrack ? drumTrack.querySelectorAll('.drum-item') : [];
     if (drumItems.length) {
-      var drumItemHeight = 80;
+      var drumItemHeight = 110;
       var drumIndex = 0;
 
       function getDrumVisibleCount() {
@@ -63,19 +63,69 @@
       });
 
       var touchStartY = 0;
+      var touchOffset = 0;
+      var isTouching = false;
+      var suppressClick = false;
+      var justSwiped = false;
+
       drumViewport.addEventListener('touchstart', function (e) {
+        if (e.touches.length !== 1) return;
         touchStartY = e.touches[0].clientY;
+        touchOffset = 0;
+        isTouching = true;
+        suppressClick = false;
+        justSwiped = false;
       }, { passive: true });
 
-      drumViewport.addEventListener('touchend', function (e) {
-        var diff = touchStartY - e.changedTouches[0].clientY;
-        if (Math.abs(diff) > 24) {
-          if (diff > 0) setDrumIndex(drumIndex + 1);
-          if (diff < 0) setDrumIndex(drumIndex - 1);
+      drumViewport.addEventListener('touchmove', function (e) {
+        if (!isTouching || e.touches.length !== 1) return;
+        e.preventDefault();
+        var y = e.touches[0].clientY;
+        var raw = y - touchStartY;
+
+        if (!suppressClick && Math.abs(raw) > 8) {
+          suppressClick = true;
         }
+
+        var center = (drumViewport.clientHeight - drumItemHeight) / 2;
+        var base = drumIndex * drumItemHeight;
+        var pixelOffset = base + raw;
+        var maxPixelOffset = Math.max(0, (drumItems.length - 1) * drumItemHeight);
+
+        if (pixelOffset < 0) {
+          var overTop = -pixelOffset;
+          raw = raw * (1 - Math.min(0.75, overTop * 0.35 / drumItemHeight));
+        } else if (pixelOffset > maxPixelOffset) {
+          var overBottom = pixelOffset - maxPixelOffset;
+          raw = raw * (1 - Math.min(0.75, overBottom * 0.35 / drumItemHeight));
+        }
+
+        touchOffset = raw;
+        drumTrack.style.transform = 'translateY(' + (center - base + raw) + 'px)';
+      }, { passive: false });
+
+      drumViewport.addEventListener('touchend', function (e) {
+        if (!isTouching) return;
+        isTouching = false;
+
+        if (suppressClick && Math.abs(touchOffset) > 8) {
+          var rawStep = -touchOffset / drumItemHeight;
+          var step = Math.round(rawStep);
+          step = Math.max(-2, Math.min(2, step));
+          setDrumIndex(drumIndex + step);
+          justSwiped = true;
+          setTimeout(function () { justSwiped = false; }, 400);
+        }
+
+        touchOffset = 0;
+        suppressClick = false;
       }, { passive: true });
 
       drumViewport.addEventListener('click', function (e) {
+        if (justSwiped) {
+          justSwiped = false;
+          return;
+        }
         var item = e.target.closest('.drum-item');
         if (!item) return;
         var idx = parseInt(item.getAttribute('data-index'), 10);
@@ -96,6 +146,81 @@
       updateDrum();
     }
   }
+
+  /* ── Drawing loader (article transition) ── */
+  var drawingLoader = document.getElementById('drawingLoader');
+  var drawingBar = document.getElementById('drawingBar');
+  var drawingPercent = document.getElementById('drawingPercent');
+  var isArticlePage = !!drawingLoader;
+
+  function runDrawingLoader(callback) {
+    if (!drawingLoader || reducedMotion) {
+      if (callback) callback();
+      return;
+    }
+    drawingLoader.classList.add('active');
+    var duration = 900;
+    var pauseRatio = 0.25 + Math.random() * 0.4;
+    var pauseDuration = 160;
+    var start = null;
+
+    function tick(now) {
+      if (!start) start = now;
+      var elapsed = now - start;
+      var ratio = Math.min(1, elapsed / duration);
+
+      if (ratio < pauseRatio) {
+        var eased = 1 - Math.pow(1 - ratio / pauseRatio, 3);
+        var pct = Math.round(eased * pauseRatio * 100);
+        if (drawingBar) drawingBar.style.width = pct + '%';
+        if (drawingPercent) drawingPercent.textContent = pct + '%';
+        requestAnimationFrame(tick);
+      } else if (ratio < pauseRatio + pauseDuration / duration) {
+        var pct = Math.round(pauseRatio * 100);
+        if (drawingBar) drawingBar.style.width = pct + '%';
+        if (drawingPercent) drawingPercent.textContent = pct + '%';
+        requestAnimationFrame(tick);
+      } else {
+        var finish = Math.min(1, (elapsed - pauseRatio * duration - pauseDuration) / (duration - pauseRatio * duration - pauseDuration));
+        finish = isNaN(finish) ? 1 : finish;
+        var easedFinish = 1 - Math.pow(1 - finish, 3);
+        var finalPct = Math.round((pauseRatio + easedFinish * (1 - pauseRatio)) * 100);
+        if (drawingBar) drawingBar.style.width = finalPct + '%';
+        if (drawingPercent) drawingPercent.textContent = finalPct + '%';
+
+        if (finish < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          setTimeout(function () {
+            drawingLoader.classList.remove('active');
+            setTimeout(function () {
+              if (drawingLoader.parentNode) drawingLoader.parentNode.removeChild(drawingLoader);
+            }, 400);
+            if (callback) callback();
+          }, 80);
+        }
+      }
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  if (isArticlePage) {
+    runDrawingLoader();
+  }
+
+  document.addEventListener('click', function (e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var href = link.getAttribute('href');
+    if (!href) return;
+    if (href.indexOf('/post/') !== 0) return;
+    if (link.target && link.target !== '_self') return;
+    e.preventDefault();
+    runDrawingLoader(function () {
+      window.location.href = href;
+    });
+  });
   var splash = document.getElementById('pageSplash');
   if (!splash) {
     // no splash on this page
@@ -110,29 +235,47 @@
     splash.classList.add('stamp-visible');
 
     var duration = 1000;
+    var pauseRatio = 0.3 + Math.random() * 0.4;
+    var pauseDuration = 180;
     var start = null;
 
     function tick(now) {
       if (!start) start = now;
       var elapsed = now - start;
       var ratio = Math.min(1, elapsed / duration);
-      var eased = 1 - Math.pow(1 - ratio, 3);
-      var pct = Math.round(eased * 100);
 
-      if (bar) bar.style.width = pct + '%';
-      if (percentEl) percentEl.textContent = pct + '%';
-
-      if (ratio < 1) {
+      if (ratio < pauseRatio) {
+        var eased = 1 - Math.pow(1 - ratio / pauseRatio, 3);
+        var pct = Math.round(eased * pauseRatio * 100);
+        if (bar) bar.style.width = pct + '%';
+        if (percentEl) percentEl.textContent = pct + '%';
+        requestAnimationFrame(tick);
+      } else if (ratio < pauseRatio + pauseDuration / duration) {
+        var pct = Math.round(pauseRatio * 100);
+        if (bar) bar.style.width = pct + '%';
+        if (percentEl) percentEl.textContent = pct + '%';
         requestAnimationFrame(tick);
       } else {
-        setTimeout(function () {
-          splash.classList.add('done');
-          document.body.classList.remove('page-splash-active');
-          document.body.classList.add('loaded');
+        var finish = Math.min(1, (elapsed - pauseRatio * duration - pauseDuration) / (duration - pauseRatio * duration - pauseDuration));
+        finish = isNaN(finish) ? 1 : finish;
+        var easedFinish = 1 - Math.pow(1 - finish, 3);
+        var finalPct = Math.round((pauseRatio + easedFinish * (1 - pauseRatio)) * 100);
+        if (bar) bar.style.width = finalPct + '%';
+        if (percentEl) percentEl.textContent = finalPct + '%';
+
+        if (finish < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          window.scrollTo(0, 0);
           setTimeout(function () {
-            if (splash.parentNode) splash.parentNode.removeChild(splash);
-          }, 500);
-        }, 120);
+            splash.classList.add('done');
+            document.body.classList.remove('page-splash-active');
+            document.body.classList.add('loaded');
+            setTimeout(function () {
+              if (splash.parentNode) splash.parentNode.removeChild(splash);
+            }, 650);
+          }, 80);
+        }
       }
     }
 
