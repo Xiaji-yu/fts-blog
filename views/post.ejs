@@ -68,57 +68,102 @@
 </div>
 
 <script>
-// Generate Table of Contents
-function generateTOC() {
-  const content = document.getElementById('postContent');
-  const tocNav = document.getElementById('tocNav');
-
+(function () {
+  var content = document.getElementById('postContent');
+  var tocNav = document.getElementById('tocNav');
   if (!content || !tocNav) return;
 
-  const headings = content.querySelectorAll('h2, h3');
-  const tocItems = [];
+  var headings = content.querySelectorAll('h2, h3');
+  if (headings.length === 0) {
+    tocNav.innerHTML = '<div class="toc-empty">暂无章节 · NO SECTIONS</div>';
+    return;
+  }
 
-  headings.forEach((heading, index) => {
-    // Add ID to heading if not present
-    if (!heading.id) {
-      heading.id = 'section-' + index;
-    }
+  var items = [];
+  headings.forEach(function (heading, index) {
+    if (!heading.id) heading.id = 'section-' + index;
+    var level = heading.tagName.toLowerCase();
+    var text = heading.textContent.trim();
 
-    const level = heading.tagName.toLowerCase();
-    const text = heading.textContent;
-    const link = document.createElement('a');
+    var link = document.createElement('a');
     link.href = '#' + heading.id;
-    link.textContent = text;
     link.className = 'toc-link toc-link-' + level;
-    link.addEventListener('click', (e) => {
+    link.dataset.targetId = heading.id;
+
+    var num = document.createElement('span');
+    num.className = 'toc-number';
+    num.textContent = String(index + 1).padStart(2, '0');
+
+    var label = document.createElement('span');
+    label.className = 'toc-label';
+    label.textContent = text;
+
+    link.appendChild(num);
+    link.appendChild(label);
+
+    link.addEventListener('click', function (e) {
       e.preventDefault();
-      heading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      link.classList.add('toc-flash');
+      setTimeout(function () { link.classList.remove('toc-flash'); }, 300);
+      var el = document.getElementById(heading.id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
     tocNav.appendChild(link);
-    tocItems.push({ level, text, id: heading.id });
+    items.push({ id: heading.id, link: link, level: level });
   });
 
-  // Highlight active TOC item on scroll
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
+  var progress = document.createElement('div');
+  progress.className = 'toc-progress';
+  tocNav.appendChild(progress);
+
+  function updateProgress() {
+    if (!progress || !items.length) return;
+    var activeItem = null;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].link.classList.contains('active')) {
+        activeItem = items[i];
+        break;
+      }
+    }
+    if (!activeItem) return;
+    var nav = progress.parentElement;
+    var navRect = nav.getBoundingClientRect();
+    var linkRect = activeItem.link.getBoundingClientRect();
+    var top = Math.max(0, linkRect.top - navRect.top + linkRect.height * 0.5);
+    progress.style.height = top + 'px';
+  }
+
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
       if (entry.isIntersecting) {
-        const id = entry.target.id;
-        document.querySelectorAll('.toc-link').forEach(link => {
-          link.classList.remove('active');
-          if (link.getAttribute('href') === '#' + id) {
-            link.classList.add('active');
-          }
-        });
+        var id = entry.target.id;
+        for (var j = 0; j < items.length; j++) {
+          items[j].link.classList.toggle('active', items[j].id === id);
+        }
+        updateProgress();
       }
     });
   }, { rootMargin: '-20% 0px -80% 0px' });
 
-  headings.forEach(heading => observer.observe(heading));
-}
+  for (var k = 0; k < headings.length; k++) {
+    observer.observe(headings[k]);
+  }
 
-// Initialize TOC on page load
-document.addEventListener('DOMContentLoaded', generateTOC);
+  var ticking = false;
+  function requestUpdate() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function () {
+      updateProgress();
+      ticking = false;
+    });
+  }
+
+  window.addEventListener('scroll', requestUpdate, { passive: true });
+  window.addEventListener('resize', requestUpdate);
+  updateProgress();
+})();
 </script>
 
 <%- include('partials/footer') %>

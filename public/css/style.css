@@ -696,12 +696,38 @@ body::after {
   color: var(--muted);
   margin-bottom: var(--spacing-sm);
   text-transform: uppercase;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.toc-title::after {
+  content: '比例 1:1';
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
 }
 
 .toc-nav {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0;
+  position: relative;
+}
+
+/* Vertical progress track (accent fills to the active section) */
+.toc-progress {
+  position: absolute;
+  left: -0.55rem;
+  top: 0.35rem;
+  width: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent-glow);
+  border-radius: 1px;
+  transition: height 0.25s ease;
+  z-index: 1;
+  height: 0;
 }
 
 .toc-link {
@@ -711,27 +737,74 @@ body::after {
   color: var(--muted);
   text-decoration: none;
   transition: all 0.2s ease;
-  line-height: 1.5;
-  padding: 0.2rem 0;
+  line-height: 1.6;
+  padding: 0.3rem 0.5rem;
   border-left: 2px solid transparent;
-  padding-left: 0.5rem;
   margin-left: -0.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  position: relative;
 }
 
 .toc-link:hover {
   color: var(--fg);
   border-left-color: var(--border-strong);
+  background: rgba(100, 200, 255, 0.04);
 }
 
 .toc-link.active {
   color: var(--fg);
-  border-left-color: var(--fg);
+  border-left-color: var(--accent);
+  background: rgba(255, 107, 53, 0.06);
   font-weight: 600;
 }
 
+.toc-number {
+  font-size: 0.62rem;
+  color: var(--muted);
+  min-width: 1.4em;
+  text-align: right;
+  flex-shrink: 0;
+  opacity: 0.7;
+  letter-spacing: 0.04em;
+}
+
+.toc-link.active .toc-number {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.toc-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
 .toc-link-h3 {
-  padding-left: 1rem;
+  padding-left: 1.25rem;
+  font-size: 0.73rem;
+}
+
+.toc-link-h3 .toc-number {
+  font-size: 0.58rem;
+  min-width: 1.2em;
+}
+
+.toc-empty {
+  font-family: var(--font-mono);
   font-size: 0.75rem;
+  color: var(--muted);
+  opacity: 0.7;
+  padding: var(--spacing-sm) 0;
+  letter-spacing: 0.06em;
+}
+
+.toc-flash {
+  background: rgba(255, 107, 53, 0.12) !important;
 }
 
 .post-content-full {
