@@ -16,6 +16,22 @@
   <meta name="twitter:card" content="summary">
 </head>
 <body>
+  <div id="pageSplash" class="page-splash" aria-hidden="true">
+    <div class="page-splash-grid" aria-hidden="true"></div>
+    <div class="page-splash-inner">
+      <div class="page-splash-brand"><%= config.site.name %></div>
+      <div class="page-splash-sub"><%= config.site.description %></div>
+      <div class="page-splash-tagline"><%= config.site.tagline %></div>
+      <div class="page-splash-bar-wrap">
+        <div class="page-splash-bar" id="splashBar"></div>
+      </div>
+      <div class="page-splash-meta">
+        <span id="splashPercent">0%</span>
+        <span class="page-splash-stamp">LOADING</span>
+      </div>
+    </div>
+    <div class="page-splash-n">N</div>
+  </div>
   <div id="scrollProgress" class="scroll-progress" aria-hidden="true"></div>
 
   <% if (nMark) { %>
@@ -36,6 +52,7 @@
     </a>
     <ul class="nav-links">
       <li><a href="/" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/') ? 'active' : '' %>">首页 · INDEX</a></li>
+      <li><a href="/posts" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/posts') ? 'active' : '' %>">归档 · ALL</a></li>
       <li><a href="/tags" class="<%= (typeof currentPath !== 'undefined' && (currentPath === '/tags' || currentPath.startsWith('/tag/'))) ? 'active' : '' %>">标签 · TAGS</a></li>
       <li><a href="/search" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/search') ? 'active' : '' %>">搜索 · SEARCH</a></li>
       <li><a href="/feed.xml">RSS</a></li>

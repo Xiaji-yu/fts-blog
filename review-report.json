@@ -1,0 +1,80 @@
+{
+  "css_specificity_conflicts": [
+    {
+      "location": "Lines 404–430",
+      "issue": "Duplicate .tag selector with conflicting declarations: first block (font-size 0.65rem, padding 0.2rem 0.5rem) is overridden by the second block (font-size 0.75rem, padding 0.3rem 0.7rem). The earlier block is dead code and creates maintenance confusion."
+    },
+    {
+      "location": "Lines 382–391 and 438–447",
+      "issue": "Duplicate .card-footer selector with identical declarations. Redundant and signals copy-paste drift risk."
+    }
+  ],
+  "animation_performance": [
+    {
+      "location": "Line 1100 (.scroll-progress)",
+      "issue": "Animating width triggers layout/repaint on every scroll frame. Replace with transform: scaleX() for compositor-only animation."
+    },
+    {
+      "location": "Line 1319 (scan-sweep keyframes)",
+      "issue": "Animating top causes layout reflow. Replace with transform: translateY() to keep animation on the compositor thread."
+    },
+    {
+      "location": "Line 1466 (.page-splash-bar)",
+      "issue": "Animating width on the splash bar causes layout thrashing. Use transform: scaleX() instead."
+    },
+    {
+      "location": "Lines 268, 1120 (.card, .back-to-top)",
+      "issue": "transition: all is broader than necessary; animating all properties can trigger unexpected layout/paint work when non-transform/opacity properties change."
+    }
+  ],
+  "js_errors": [
+    {
+      "location": "Lines 108–117 (typewriter effect)",
+      "issue": "text.slice(0, index) can split surrogate pairs (emoji, wide characters). This does not throw, but produces garbled text or replacement characters as the typewriter advances."
+    }
+  ],
+  "missing_error_handling": [
+    {
+      "location": "Lines 110–118 (typewriter timeouts)",
+      "issue": "Typewriter setTimeout callbacks are never cancelled. If the element is removed from the DOM or the page navigates (SPA), timers continue running and may write to detached nodes."
+    },
+    {
+      "location": "Interactive controls across CSS",
+      "issue": "No :focus or :focus-visible styles are defined for .nav-links a, .btn, .back-to-top, .modal-close, or .card-link. Keyboard users lose the default focus ring or receive no visible focus indicator depending on browser defaults."
+    }
+  ],
+  "z_index_stacking": [
+    {
+      "location": "Lines 972 and 1098",
+      "issue": ".modal-overlay and .scroll-progress both use z-index: 1000. Stacking order between them depends entirely on DOM order, which is fragile if markup is reordered."
+    },
+    {
+      "location": "Line 1389 (.page-splash)",
+      "issue": "z-index: 2000 remains on the splash even after opacity: 0. pointer-events: none mitigates interaction blocking, but the element still participates in stacking context."
+    }
+  ],
+  "mobile_breakpoints": [
+    {
+      "location": "Lines 485–501, 1022–1057, 1323–1350",
+      "issue": "Breakpoints at 1200px, 900px, 768px, and 480px provide reasonable coverage for grid, nav, hot strip, status panel, and TOC hiding."
+    },
+    {
+      "location": "Lines 1050–1052 and 1068–1070",
+      "issue": "Redundant 480px .post-layout rule repeats the 768px behavior; harmless but unnecessary."
+    }
+  ],
+  "accessibility": [
+    {
+      "location": "Lines 12–13 (JS) and 1353–1380 (CSS)",
+      "issue": "prefers-reduced-motion is correctly respected: animations are disabled in CSS and smooth scrolling is suppressed in JS."
+    },
+    {
+      "location": "Form inputs (lines 582–587)",
+      "issue": "outline: none is applied on focus; while box-shadow provides an indicator, there is no :focus-visible variant to distinguish mouse from keyboard focus."
+    },
+    {
+      "location": "Missing landmarks",
+      "issue": "No skip link or ARIA landmarks are present in the reviewed files (HTML-dependent, but notable for keyboard/screen-reader navigation)."
+    }
+  ]
+}

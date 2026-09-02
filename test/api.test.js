@@ -3,6 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
+const cache = require('../lib/cache');
 
 // Isolated per-file directory: node --test runs test files in parallel, so
 // each file must own its temp dir (see db.test.js for its own).
@@ -115,6 +116,41 @@ test('homepage shows nav, status panel, hero actions and hot strip', async () =>
   assert.match(html, /hero-actions/, 'hero search/random actions rendered');
   assert.match(html, /随机图纸|RANDOM/, 'random button rendered');
   assert.match(html, /hot-section/, 'hot drawings strip rendered');
+  assert.match(html, /post-grid/, 'card grid rendered');
+  assert.match(html, /查看更多|VIEW ALL POSTS/, 'view-all button rendered');
+});
+
+test('homepage shows "view all" when more than 12 posts', async () => {
+  // Seed enough posts to exceed the homepage limit of 12.
+  const db = require('../database/db');
+  const baseTime = new Date().toISOString();
+  for (let i = 0; i < 10; i++) {
+    await db.run(
+      `INSERT INTO posts (title, slug, content, published, created_at, updated_at)
+       VALUES (?, ?, ?, 1, ?, ?)`,
+      [`Extra Post ${i}`, `extra-post-${i}`, `content ${i}`, baseTime, baseTime]
+    );
+  }
+  cache.invalidateAll();
+
+  const res = await request('GET', '/');
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /查看更多|VIEW ALL POSTS/, 'view-all button rendered when over limit');
+  assert.match(html, /post-grid/, 'card grid rendered');
+  assert.match(html, /card-title/, 'card titles rendered');
+});
+
+test('/posts archive shows all published posts as a drum list', async () => {
+  const res = await request('GET', '/posts');
+  assert.equal(res.status, 200);
+  const html = await res.text();
+  assert.match(html, /全部图纸|ALL POSTS/, 'archive title rendered');
+  assert.match(html, /drum-viewport/, 'drum viewport rendered');
+  assert.match(html, /drum-item/, 'drum items rendered');
+  assert.match(html, /drum-track/, 'drum track rendered');
+  const itemCount = (html.match(/drum-item/g) || []).length;
+  assert.ok(itemCount >= 3, 'multiple drum items rendered, got ' + itemCount);
 });
 
 test('random redirects to a published post (or home when none)', async () => {

@@ -9,16 +9,6 @@
     user-select: none;
     -webkit-user-select: none;
   }
-  .pagination {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    margin: var(--spacing-lg) 0;
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--fg-dim);
-  }
 </style>
 
 <div class="homepage-content">
@@ -100,9 +90,7 @@
   <article class="card" ondblclick="window.location.href='/post/<%= post.id %>'">
     <div class="card-header">
       <div>
-        <h3 class="card-title">
-          <%= post.title %>
-        </h3>
+        <h3 class="card-title"><%= post.title %></h3>
         <% if (post.title_en) { %>
         <div class="card-title-en"><%= post.title_en %></div>
         <% } %>
@@ -132,17 +120,9 @@
 </div>
 <% } %>
 
-<% if (typeof pagination !== 'undefined' && pagination.pages > 1) { %>
-<div class="pagination">
-  <% if (pagination.hasPrev) { %>
-  <a href="/?page=<%= pagination.page - 1 %>" class="btn btn-outline btn-sm">← 上一页 · PREV</a>
-  <% } %>
-  <span>第 <%= pagination.page %> / <%= pagination.pages %> 页</span>
-  <% if (pagination.hasNext) { %>
-  <a href="/?page=<%= pagination.page + 1 %>" class="btn btn-outline btn-sm">下一页 · NEXT →</a>
-  <% } %>
+<div class="text-center mt-lg">
+  <a href="/posts" class="btn btn-random">查看更多 · VIEW ALL POSTS →</a>
 </div>
-<% } %>
 
 </div>
 

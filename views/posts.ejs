@@ -1,0 +1,132 @@
+<%- include('partials/header', { title: title, wide: true }) %>
+
+<style>
+  .posts-page .post-list-item {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+</style>
+
+<div class="homepage-content posts-page">
+
+<div class="title-block">
+  <h1 class="main-title">全部图纸</h1>
+  <h2 class="sub-title">ALL POSTS</h2>
+  <p class="sub-title-en typewriter" id="typewriterLine" data-text="共 <%= postCount %> 篇 · ARCHIVE">共 <%= postCount %> 篇 · ARCHIVE</p>
+</div>
+
+<hr class="divider">
+
+<div class="spec-block">
+  <p><span class="label">图号</span> <strong><%= config.blueprint.prefix %>-ARCHIVE</strong> · 比例 1:1 · <span class="label">操作</span> <strong>SCROLL / ↑↓</strong></p>
+</div>
+
+<div class="drum-viewport" id="drumViewport" tabindex="0" role="listbox" aria-label="文章列表">
+  <div class="drum-track" id="drumTrack">
+    <% posts.forEach((post, index) => { %>
+    <a href="/post/<%= post.id %>" class="drum-item" role="option" data-index="<%= index %>" aria-label="<%= post.title %>">
+      <div class="drum-number"><%= String(index + 1).padStart(3, '0') %></div>
+      <div class="drum-body">
+        <div class="drum-title"><%= post.title %></div>
+        <% if (post.title_en) { %><div class="drum-title-en"><%= post.title_en %></div><% } %>
+      </div>
+      <div class="drum-meta">
+        <div><%= new Date(post.created_at).toLocaleDateString('zh-CN') %></div>
+        <div class="card-stats">⏱ <%= post.read_time %> MIN · <%= new Intl.NumberFormat('en-US').format(post.view_count) %> VIEWS</div>
+      </div>
+    </a>
+    <% }) %>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="text-center mt-md">
+  <a href="/" class="card-link" style="display: inline-flex; border: 1px solid var(--border); padding: 0.5rem 1.2rem; background: rgba(100, 200, 255, 0.05);"><%= config.post.backToIndex %></a>
+</div>
+
+</div>
+
+<script>
+(function () {
+  var viewport = document.getElementById('drumViewport');
+  var track = document.getElementById('drumTrack');
+  if (!viewport || !track) return;
+
+  var items = track.querySelectorAll('.drum-item');
+  if (!items.length) return;
+
+  var itemHeight = 80;
+  var currentIndex = 0;
+
+  function getVisibleCount() {
+    return Math.max(1, Math.floor(viewport.clientHeight / itemHeight));
+  }
+
+  function updateDrum() {
+    var visible = getVisibleCount();
+    var offset = currentIndex * itemHeight;
+    var center = (viewport.clientHeight - itemHeight) / 2;
+    track.style.transform = 'translateY(' + (center - offset) + 'px)';
+    items.forEach(function (item, i) {
+      item.classList.toggle('active', i === currentIndex);
+      item.setAttribute('aria-selected', i === currentIndex ? 'true' : 'false');
+    });
+  }
+
+  function setIndex(next) {
+    next = Math.max(0, Math.min(items.length - 1, next));
+    if (next !== currentIndex) {
+      currentIndex = next;
+      updateDrum();
+    }
+  }
+
+  viewport.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    if (e.deltaY > 0) setIndex(currentIndex + 1);
+    if (e.deltaY < 0) setIndex(currentIndex - 1);
+  }, { passive: false });
+
+  document.addEventListener('keydown', function (e) {
+    if (document.activeElement !== viewport) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setIndex(currentIndex + 1); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); setIndex(currentIndex - 1); }
+  });
+
+  var touchStartY = 0;
+  viewport.addEventListener('touchstart', function (e) {
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  viewport.addEventListener('touchend', function (e) {
+    var diff = touchStartY - e.changedTouches[0].clientY;
+    if (Math.abs(diff) > 24) {
+      if (diff > 0) setIndex(currentIndex + 1);
+      if (diff < 0) setIndex(currentIndex - 1);
+    }
+  }, { passive: true });
+
+  viewport.addEventListener('click', function (e) {
+    var item = e.target.closest('.drum-item');
+    if (!item) return;
+    var idx = parseInt(item.getAttribute('data-index'), 10);
+    if (!isNaN(idx)) {
+      currentIndex = idx;
+      updateDrum();
+    }
+  });
+
+  viewport.addEventListener('dblclick', function (e) {
+    var item = e.target.closest('.drum-item');
+    if (item) {
+      e.preventDefault();
+      window.location.href = item.getAttribute('href');
+    }
+  });
+
+  updateDrum();
+})();
+</script>
+
+<%- include('partials/footer') %>

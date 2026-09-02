@@ -136,17 +136,16 @@ function toRfc822(dateStr) {
   return isNaN(d.getTime()) ? new Date().toUTCString() : d.toUTCString();
 }
 
-// GET / - Homepage (paginated)
+// GET / - Homepage (latest 12 posts + preview, no pagination)
 router.get('/', async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const limit = config.pagination.defaultLimit;
-    const cacheKey = `homepage:${page}`;
+    const limit = 12;
+    const cacheKey = 'homepage:1';
 
     let data = cache.get(cacheKey);
     if (!data) {
       const [posts, total, stats, hotPosts] = await Promise.all([
-        fetchPublishedPosts({ limit, offset: (page - 1) * limit }),
+        fetchPublishedPosts({ limit, offset: 0 }),
         countPublished({}),
         fetchSiteStats(),
         fetchHotPosts(3)
@@ -155,20 +154,45 @@ router.get('/', async (req, res) => {
       cache.set(cacheKey, data);
     }
 
-    const pages = Math.max(1, Math.ceil(data.total / limit));
-
     res.render('index', {
       title: `${config.site.name} · ${config.site.tagline}`,
       posts: data.posts,
       postCount: data.total,
       stats: data.stats,
       hotPosts: data.hotPosts,
-      pagination: { page, limit, pages, hasPrev: page > 1, hasNext: page < pages },
+      hasMore: data.total > limit,
       blueprint: config.features.blueprint,
       nMark: config.features.nMark
     });
   } catch (err) {
     console.error('Homepage error:', err);
+    res.status(500).send('Server error');
+  }
+});
+
+// GET /posts - Full archive (all published posts, scrollable list)
+router.get('/posts', async (req, res) => {
+  try {
+    const cacheKey = 'posts:all';
+
+    let posts = cache.get(cacheKey);
+    if (!posts) {
+      posts = await fetchPublishedPosts({});
+      cache.set(cacheKey, posts);
+    }
+
+    const stats = await fetchSiteStats();
+
+    res.render('posts', {
+      title: `全部图纸 · All Posts — ${config.site.name}`,
+      posts,
+      postCount: posts.length,
+      stats,
+      blueprint: config.features.blueprint,
+      nMark: config.features.nMark
+    });
+  } catch (err) {
+    console.error('Posts page error:', err);
     res.status(500).send('Server error');
   }
 });
