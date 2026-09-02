@@ -1,9 +1,9 @@
-<%- include('partials/header', { title: title, wide: true, noSplash: true, ogTitle: post.title, ogDescription: post.excerpt || post.title, ogUrl: ((config.site.url || config.server.publicUrl).replace(/\/+$/, '')) + '/post/' + post.id }) %>
+﻿<%- include('partials/header', { title: title, wide: true, noSplash: true, ogTitle: post.title, ogDescription: post.excerpt || post.title, ogUrl: ((config.site.url || config.server.publicUrl).replace(/\/+$/, '')) + '/post/' + post.id }) %>
 
 <div id="drawingLoader" class="drawing-loader" aria-hidden="true">
   <div class="drawing-loader-grid" aria-hidden="true"></div>
   <div class="drawing-loader-inner">
-    <div class="drawing-loader-title">图纸 [<%= post.title %>] 正在加载</div>
+    <div class="drawing-loader-title">图纸 [<%= post.title %>]… 正在加载</div>
     <div class="drawing-loader-sub">DRAWING LOADER</div>
     <div class="drawing-loader-bar-wrap">
       <div class="drawing-loader-bar" id="drawingBar"></div>

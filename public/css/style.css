@@ -457,6 +457,7 @@ body::after {
   color: var(--fg);
   text-decoration: none;
   transition: all 0.2s ease;
+  margin-left: auto;
 }
 
 .card-link:hover {
@@ -1586,8 +1587,10 @@ body.page-splash-active {
   text-align: center;
   letter-spacing: 0.12em;
   text-shadow: 0 0 24px rgba(100, 200, 255, 0.45);
-  line-height: 1.4;
-  word-break: break-word;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .drawing-loader-sub {
