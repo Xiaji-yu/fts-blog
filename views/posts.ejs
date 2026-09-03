@@ -15,6 +15,8 @@
   <p class="sub-title-en typewriter" id="typewriterLine" data-text="共 <%= postCount %> 条记录 · TOTAL RECORDS">共 <%= postCount %> 条记录 · TOTAL RECORDS</p>
 </div>
 
+<div class="compass-marker" aria-hidden="true">N</div>
+
 <hr class="divider">
 
 <div class="spec-block">
@@ -34,6 +36,7 @@
 </div>
 
 <div class="drum-viewport" id="drumViewport" tabindex="0" role="listbox" aria-label="图纸数据库">
+  <span class="scale-indicator" aria-hidden="true">SCALE 1:1</span>
   <div class="drum-track" id="drumTrack">
     <% posts.forEach((post, index) => { %>
     <a href="/post/<%= post.id %>" class="drum-item" role="option" data-index="<%= index %>" aria-label="<%= post.title %>">
@@ -51,11 +54,18 @@
   </div>
 </div>
 
+<div class="blueprint-plate" aria-hidden="true">
+  <span class="plate-text">END OF DATABASE</span>
+  <span class="plate-sub">— EOF —</span>
+</div>
+
 <hr class="divider">
 
 <div class="text-center mt-md">
   <a href="/" class="card-link" style="display: inline-flex; border: 1px solid var(--border); padding: 0.5rem 1.2rem; background: rgba(100, 200, 255, 0.05);"><%= config.post.backToIndex %></a>
 </div>
+
+<div class="compass-marker compass-s" aria-hidden="true">S</div>
 
 </div>
 

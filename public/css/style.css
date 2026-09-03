@@ -2078,6 +2078,10 @@ body.loaded .post-grid { animation-delay: 0.34s; }
 }
 
 /* Corner brackets (technical drawing style) */
+.posts-page .homepage-content {
+  position: relative;
+}
+
 .posts-page .homepage-content::before,
 .posts-page .homepage-content::after {
   content: '';
@@ -2090,12 +2094,44 @@ body.loaded .post-grid { animation-delay: 0.34s; }
   opacity: 0.6;
 }
 
+/* Top-left corner */
 .posts-page .homepage-content::before {
   top: -1px;
   left: -1px;
   border-width: 2px 0 0 2px;
 }
 
+/* Top-right corner */
+.posts-page .homepage-content > .title-block::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 24px;
+  height: 24px;
+  border-color: var(--accent);
+  border-style: solid;
+  border-width: 2px 2px 0 0;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Bottom-left corner */
+.posts-page .homepage-content > .text-center::before {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: -1px;
+  width: 24px;
+  height: 24px;
+  border-color: var(--accent);
+  border-style: solid;
+  border-width: 0 0 2px 2px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Bottom-right corner (already exists via .homepage-content::after, keep it) */
 .posts-page .homepage-content::after {
   bottom: -1px;
   right: -1px;
@@ -2155,6 +2191,19 @@ body.loaded .post-grid { animation-delay: 0.34s; }
   padding: 0 0.4rem;
 }
 
+.hero-search::after {
+  content: '►';
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--accent);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 /* Archive list item technical style */
 .drum-item {
   position: relative;
@@ -2176,6 +2225,160 @@ body.loaded .post-grid { animation-delay: 0.34s; }
 
 .drum-item:hover::after {
   opacity: 0.4;
+}
+
+/* Bottom technical plate to balance top stamp */
+.posts-page .drum-viewport + .divider {
+  position: relative;
+}
+
+.posts-page .drum-viewport + .divider::before,
+.posts-page .drum-viewport + .divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40px;
+  height: 1px;
+  background: var(--border-strong);
+  opacity: 0.4;
+}
+
+.posts-page .drum-viewport + .divider::before {
+  left: 0;
+}
+
+.posts-page .drum-viewport + .divider::after {
+  right: 0;
+}
+
+/* Technical reference markers */
+.posts-page .spec-block {
+  position: relative;
+  padding-left: 1.2rem;
+  padding-right: 1.2rem;
+}
+
+.posts-page .spec-block::before {
+  content: '▣';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.6rem;
+  color: var(--accent);
+  opacity: 0.5;
+}
+
+.posts-page .spec-block::after {
+  content: '◈';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.6rem;
+  color: var(--accent);
+  opacity: 0.5;
+}
+
+/* Symmetrical title decorations */
+.posts-page .title-block {
+  position: relative;
+}
+
+.posts-page .title-block::before {
+  content: '◆';
+  position: absolute;
+  top: -0.5rem;
+  right: 0;
+  font-size: 0.65rem;
+  color: var(--accent);
+  opacity: 0.5;
+  letter-spacing: 0.1em;
+}
+
+.posts-page .title-block::after {
+  content: '◆';
+  position: absolute;
+  top: -0.5rem;
+  left: 0;
+  font-size: 0.65rem;
+  color: var(--accent);
+  opacity: 0.5;
+  letter-spacing: 0.1em;
+}
+
+/* Drum viewport corner accents */
+.drum-viewport {
+  position: relative;
+}
+
+.drum-viewport::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 20px;
+  height: 20px;
+  border-top: 1px solid var(--accent);
+  border-left: 1px solid var(--accent);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.drum-viewport::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-bottom: 1px solid var(--accent);
+  border-right: 1px solid var(--accent);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Additional drum viewport corners for symmetry */
+.drum-viewport .drum-corner-tr,
+.drum-viewport .drum-corner-bl {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.drum-viewport .drum-corner-tr {
+  top: 0;
+  right: 0;
+  border-top: 1px solid var(--accent);
+  border-right: 1px solid var(--accent);
+}
+
+.drum-viewport .drum-corner-bl {
+  bottom: 0;
+  left: 0;
+  border-bottom: 1px solid var(--accent);
+  border-left: 1px solid var(--accent);
+}
+
+/* Scale indicator inside drum viewport */
+.scale-indicator {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.15em;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Hide default scale text since we now use corner accents */
+.scale-text {
+  display: none;
 }
 
 /* Blueprint stamp decoration for archive page */
@@ -2216,5 +2419,153 @@ body.loaded .post-grid { animation-delay: 0.34s; }
   font-size: 0.65rem;
   color: var(--muted);
   letter-spacing: 0.2em;
+  opacity: 0.7;
+}
+
+/* Bottom plate to balance top stamp */
+.blueprint-plate {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--border);
+  background: rgba(100, 200, 255, 0.02);
+  margin-top: var(--spacing-md);
+  position: relative;
+}
+
+.blueprint-plate::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 1px dashed var(--border);
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.plate-text {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--fg);
+  letter-spacing: 0.15em;
+  opacity: 0.8;
+}
+
+.plate-sub {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.2em;
+  opacity: 0.6;
+}
+
+/* Compass markers N/S for archive page */
+.compass-marker {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--accent);
+  opacity: 0.35;
+  letter-spacing: 0.1em;
+  pointer-events: none;
+}
+
+.compass-marker {
+  top: 0.5rem;
+  right: 0.75rem;
+}
+
+.compass-s {
+  top: auto;
+  bottom: 0.5rem;
+  right: 0.75rem;
+}
+
+/* Symmetrical divider accents */
+.posts-page .divider {
+  position: relative;
+}
+
+.posts-page .divider::before,
+.posts-page .divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 30px;
+  height: 1px;
+  background: var(--border-strong);
+  opacity: 0.3;
+}
+
+.posts-page .divider::before {
+  left: 0;
+}
+
+.posts-page .divider::after {
+  right: 0;
+}
+
+/* Search form technical frame */
+.hero-search {
+  position: relative;
+  border: 1px dashed var(--border);
+  padding: 0.75rem 1rem;
+  background: rgba(100, 200, 255, 0.01);
+}
+
+.hero-search::before {
+  content: 'QUERY';
+  position: absolute;
+  top: -0.55rem;
+  left: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--muted);
+  letter-spacing: 0.2em;
+  opacity: 0.7;
+  background: var(--bg);
+  padding: 0 0.4rem;
+}
+
+.hero-search::after {
+  content: '►';
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  color: var(--accent);
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* Drum item symmetric hover accent */
+.drum-item {
+  position: relative;
+}
+
+.drum-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.drum-item:hover::before {
+  opacity: 0.4;
+}
+
+.drum-item.active::before {
   opacity: 0.7;
 }
