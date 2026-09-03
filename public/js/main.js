@@ -168,21 +168,29 @@
     var pageLoaded = false;
     var finished = false;
 
+    function completeLoader() {
+      if (finished) return;
+      finished = true;
+      pageLoaded = true;
+
+      if (drawingBar) drawingBar.style.width = '100%';
+      if (drawingPercent) drawingPercent.textContent = '100%';
+      setTimeout(function () {
+        drawingLoader.classList.remove('active');
+        document.documentElement.classList.remove('drawer-ready');
+        setTimeout(function () {
+          if (drawingLoader.parentNode) drawingLoader.parentNode.removeChild(drawingLoader);
+        }, 400);
+        if (callback) callback();
+      }, 200);
+    }
+
     // 尽早监听页面加载，避免竞态条件
     function onPageLoad() {
       pageLoaded = true;
       window.removeEventListener('load', onPageLoad);
       if (finished) {
-        if (drawingBar) drawingBar.style.width = '100%';
-        if (drawingPercent) drawingPercent.textContent = '100%';
-        setTimeout(function () {
-          drawingLoader.classList.remove('active');
-          document.documentElement.classList.remove('drawer-ready');
-          setTimeout(function () {
-            if (drawingLoader.parentNode) drawingLoader.parentNode.removeChild(drawingLoader);
-          }, 400);
-          if (callback) callback();
-        }, 200);
+        completeLoader();
       }
     }
     
@@ -198,26 +206,11 @@
       finished = true;
 
       if (pageLoaded) {
-        setTimeout(function () {
-          drawingLoader.classList.remove('active');
-          document.documentElement.classList.remove('drawer-ready');
-          setTimeout(function () {
-            if (drawingLoader.parentNode) drawingLoader.parentNode.removeChild(drawingLoader);
-          }, 400);
-          if (callback) callback();
-        }, 80);
+        completeLoader();
       } else {
         // 再次检查，防止 load 事件已在 finish 前触发但未处理
         if (document.readyState === 'complete') {
-          pageLoaded = true;
-          setTimeout(function () {
-            drawingLoader.classList.remove('active');
-            document.documentElement.classList.remove('drawer-ready');
-            setTimeout(function () {
-              if (drawingLoader.parentNode) drawingLoader.parentNode.removeChild(drawingLoader);
-            }, 400);
-            if (callback) callback();
-          }, 200);
+          completeLoader();
           return;
         }
         
