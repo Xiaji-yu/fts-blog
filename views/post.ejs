@@ -1,6 +1,8 @@
 ﻿<%- include('partials/header', { title: title, wide: true, noSplash: true, ogTitle: post.title, ogDescription: post.excerpt || post.title, ogUrl: ((config.site.url || config.server.publicUrl).replace(/\/+$/, '')) + '/post/' + post.id }) %>
+<style>html.drawer-ready .title-block,html.drawer-ready .spec-block,html.drawer-ready .post-layout,html.drawer-ready .post-content-full{opacity:0}#drawingLoader{opacity:1;pointer-events:auto}</style>
+<script>document.documentElement.classList.add('drawer-ready')</script>
 
-<div id="drawingLoader" class="drawing-loader" aria-hidden="true">
+<div id="drawingLoader" class="drawing-loader active" aria-hidden="true">
   <div class="drawing-loader-grid" aria-hidden="true"></div>
   <div class="drawing-loader-inner">
     <div class="drawing-loader-title">图纸 [<%= post.title %>]… 正在加载</div>
