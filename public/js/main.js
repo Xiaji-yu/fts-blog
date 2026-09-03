@@ -161,7 +161,7 @@
       return;
     }
     drawingLoader.classList.add('active');
-    var duration = 2000;
+    var duration = 1000;
     var pauseRatio = 0.25 + Math.random() * 0.4;
     var pauseDuration = 160;
     var start = null;
