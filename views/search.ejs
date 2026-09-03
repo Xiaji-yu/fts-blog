@@ -16,9 +16,15 @@
 </div>
 
 <% if (mode === 'search') { %>
-<form method="GET" action="/search" style="max-width: 480px; margin: var(--spacing-md) auto; display: flex; gap: var(--spacing-sm);">
-  <input type="search" name="q" value="<%= query %>" class="form-input" placeholder="搜索文章标题 / 摘要 / 内容…" required>
-  <button type="submit" class="btn">搜索 · GO</button>
+<form method="GET" action="/search" class="search-form" role="search">
+  <div class="search-input-wrap">
+    <input type="search" name="q" value="<%= query %>" class="form-input" placeholder="查询图纸 · QUERY DRAWINGS…" aria-label="站内搜索" required>
+    <button type="submit" class="btn btn-sm">查询 · QUERY</button>
+  </div>
+  <div class="search-loader" aria-hidden="true">
+    <div class="search-loader-ring"></div>
+    <div class="search-loader-text">检索中</div>
+  </div>
 </form>
 <% } %>
 

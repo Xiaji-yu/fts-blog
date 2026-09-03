@@ -244,6 +244,14 @@
       prefetchTimer = null;
     }
   });
+
+  /* ── Search form loading state ── */
+  var searchForms = document.querySelectorAll('.search-form');
+  searchForms.forEach(function (form) {
+    form.addEventListener('submit', function () {
+      form.classList.add('loading');
+    });
+  });
   var splash = document.getElementById('pageSplash');
   if (!splash) {
     // no splash on this page
