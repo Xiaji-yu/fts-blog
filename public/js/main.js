@@ -168,6 +168,31 @@
     var pageLoaded = false;
     var finished = false;
 
+    // 尽早监听页面加载，避免竞态条件
+    function onPageLoad() {
+      pageLoaded = true;
+      window.removeEventListener('load', onPageLoad);
+      if (finished) {
+        if (drawingBar) drawingBar.style.width = '100%';
+        if (drawingPercent) drawingPercent.textContent = '100%';
+        setTimeout(function () {
+          drawingLoader.classList.remove('active');
+          document.documentElement.classList.remove('drawer-ready');
+          setTimeout(function () {
+            if (drawingLoader.parentNode) drawingLoader.parentNode.removeChild(drawingLoader);
+          }, 400);
+          if (callback) callback();
+        }, 200);
+      }
+    }
+    
+    // 如果页面已经加载完成，直接标记
+    if (document.readyState === 'complete') {
+      pageLoaded = true;
+    } else {
+      window.addEventListener('load', onPageLoad);
+    }
+
     function finish() {
       if (finished) return;
       finished = true;
@@ -182,14 +207,9 @@
           if (callback) callback();
         }, 80);
       } else {
-        if (drawingBar) drawingBar.style.width = '99%';
-        if (drawingPercent) drawingPercent.textContent = '99%';
-
-        window.addEventListener('load', function onLoad() {
+        // 再次检查，防止 load 事件已在 finish 前触发但未处理
+        if (document.readyState === 'complete') {
           pageLoaded = true;
-          window.removeEventListener('load', onLoad);
-          if (drawingBar) drawingBar.style.width = '100%';
-          if (drawingPercent) drawingPercent.textContent = '100%';
           setTimeout(function () {
             drawingLoader.classList.remove('active');
             document.documentElement.classList.remove('drawer-ready');
@@ -198,7 +218,11 @@
             }, 400);
             if (callback) callback();
           }, 200);
-        });
+          return;
+        }
+        
+        if (drawingBar) drawingBar.style.width = '99%';
+        if (drawingPercent) drawingPercent.textContent = '99%';
       }
     }
 

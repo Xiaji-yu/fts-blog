@@ -14,6 +14,9 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="<%= config.site.name %>">
   <meta name="twitter:card" content="summary">
+  <% if (typeof headExtra !== 'undefined') { %>
+    <%= headExtra %>
+  <% } %>
 </head>
 <body>
   <% if (typeof noSplash === 'undefined' || !noSplash) { %>
