@@ -195,6 +195,7 @@
         } else {
           setTimeout(function () {
             drawingLoader.classList.remove('active');
+            document.documentElement.classList.remove('drawer-ready');
             setTimeout(function () {
               if (drawingLoader.parentNode) drawingLoader.parentNode.removeChild(drawingLoader);
             }, 400);
