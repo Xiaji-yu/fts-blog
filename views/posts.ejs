@@ -1,4 +1,4 @@
-<%- include('partials/header', { title: title, wide: true, splashBrand: '全部图纸', splashSub: 'ALL POSTS', splashTagline: '共 ' + postCount + ' 篇 · ARCHIVE' }) %>
+<%- include('partials/header', { title: title, wide: true, splashBrand: '图纸数据库', splashSub: 'DRAWING DATABASE', splashTagline: '共 ' + postCount + ' 条记录 · TOTAL RECORDS' }) %>
 
 <style>
   .posts-page .post-list-item {
@@ -10,18 +10,30 @@
 <div class="homepage-content posts-page">
 
 <div class="title-block">
-  <h1 class="main-title">全部图纸</h1>
-  <h2 class="sub-title">ALL POSTS</h2>
-  <p class="sub-title-en typewriter" id="typewriterLine" data-text="共 <%= postCount %> 篇 · ARCHIVE">共 <%= postCount %> 篇 · ARCHIVE</p>
+  <h1 class="main-title">图纸数据库</h1>
+  <h2 class="sub-title">DRAWING DATABASE</h2>
+  <p class="sub-title-en typewriter" id="typewriterLine" data-text="共 <%= postCount %> 条记录 · TOTAL RECORDS">共 <%= postCount %> 条记录 · TOTAL RECORDS</p>
 </div>
 
 <hr class="divider">
 
 <div class="spec-block">
-  <p><span class="label">图号</span> <strong><%= config.blueprint.prefix %>-ARCHIVE</strong> · 比例 1:1 · <span class="label">操作</span> <strong>SCROLL / ↑↓</strong></p>
+  <p><span class="label">图号</span> <strong><%= config.blueprint.prefix %>-DB</strong> · 比例 1:1 · <span class="label">系统</span> <strong>SQLITE</strong> · <span class="label">记录</span> <strong><%= postCount %> ROWS</strong></p>
 </div>
 
-<div class="drum-viewport" id="drumViewport" tabindex="0" role="listbox" aria-label="文章列表">
+<div class="blueprint-stamp" aria-hidden="true">
+  <span class="stamp-text">图纸数据库</span>
+  <span class="stamp-sub">DRAWING DATABASE · REV 0</span>
+</div>
+
+<div class="hero-actions">
+  <form method="GET" action="/search" class="hero-search" role="search">
+    <input type="search" name="q" class="form-input" placeholder="查询图纸 · QUERY DRAWINGS…" aria-label="站内搜索" required>
+    <button type="submit" class="btn btn-sm">查询 · QUERY</button>
+  </form>
+</div>
+
+<div class="drum-viewport" id="drumViewport" tabindex="0" role="listbox" aria-label="图纸数据库">
   <div class="drum-track" id="drumTrack">
     <% posts.forEach((post, index) => { %>
     <a href="/post/<%= post.id %>" class="drum-item" role="option" data-index="<%= index %>" aria-label="<%= post.title %>">

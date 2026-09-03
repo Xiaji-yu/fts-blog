@@ -25,14 +25,6 @@
   <p><span class="label">图号</span> <strong><%= config.blueprint.prefix %>-INDEX</strong> · 比例 1:1 · <span class="label">状态</span> <strong>ONLINE</strong></p>
 </div>
 
-<div class="hero-actions">
-  <form method="GET" action="/search" class="hero-search" role="search">
-    <input type="search" name="q" class="form-input" placeholder="搜索图纸 · SEARCH DRAWINGS…" aria-label="站内搜索" required>
-    <button type="submit" class="btn btn-sm">搜索 · GO</button>
-  </form>
-  <a href="/random" class="btn btn-sm btn-random" title="随机跳转到一张图纸">🎲 随机图纸 · RANDOM</a>
-</div>
-
 <% if (stats) { %>
 <div class="status-panel" aria-label="图纸库统计">
   <div class="status-item">

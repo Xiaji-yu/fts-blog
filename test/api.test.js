@@ -107,14 +107,12 @@ test('public endpoints respond', async () => {
   assert.match(searchText, /SQLite/);
 });
 
-test('homepage shows nav, status panel, hero actions and hot strip', async () => {
+test('homepage shows nav, status panel, hot strip and post grid', async () => {
   const res = await request('GET', '/');
   assert.equal(res.status, 200);
   const html = await res.text();
   assert.match(html, /nav-links/, 'top navigation rendered');
   assert.match(html, /status-panel/, 'stats panel rendered');
-  assert.match(html, /hero-actions/, 'hero search/random actions rendered');
-  assert.match(html, /随机图纸|RANDOM/, 'random button rendered');
   assert.match(html, /hot-section/, 'hot drawings strip rendered');
   assert.match(html, /post-grid/, 'card grid rendered');
   assert.match(html, /查看更多|VIEW ALL POSTS/, 'view-all button rendered');
