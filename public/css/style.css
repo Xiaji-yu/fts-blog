@@ -2590,9 +2590,10 @@ body.loaded .post-grid { animation-delay: 0.34s; }
   display: none;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.35rem 0.8rem;
-  border: 1px dashed var(--border);
-  background: rgba(100, 200, 255, 0.03);
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--accent);
+  background: rgba(100, 200, 255, 0.08);
+  box-shadow: 0 0 12px rgba(100, 200, 255, 0.15);
 }
 
 .search-form.loading .search-loader {
@@ -2600,19 +2601,22 @@ body.loaded .post-grid { animation-delay: 0.34s; }
 }
 
 .search-loader-ring {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border: 2px solid var(--border);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: searchSpin 0.8s linear infinite;
+  box-shadow: 0 0 8px var(--accent-glow);
 }
 
 .search-loader-text {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
   color: var(--fg);
-  letter-spacing: 0.15em;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 10px rgba(100, 200, 255, 0.4);
 }
 
 @keyframes searchSpin {

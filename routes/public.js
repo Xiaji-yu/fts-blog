@@ -329,7 +329,8 @@ router.get('/search', async (req, res) => {
         posts: [],
         total: 0,
         blueprint: config.features.blueprint,
-        nMark: config.features.nMark
+        nMark: config.features.nMark,
+        noSplash: true
       });
     }
     const [posts, total] = await Promise.all([
@@ -344,7 +345,8 @@ router.get('/search', async (req, res) => {
       posts,
       total,
       blueprint: config.features.blueprint,
-      nMark: config.features.nMark
+      nMark: config.features.nMark,
+      noSplash: true
     });
   } catch (err) {
     console.error('Search error:', err);

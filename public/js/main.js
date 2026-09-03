@@ -253,7 +253,7 @@
       form.classList.add('loading');
       setTimeout(function () {
         form.submit();
-      }, 60);
+      }, 200);
     });
   });
   var splash = document.getElementById('pageSplash');
