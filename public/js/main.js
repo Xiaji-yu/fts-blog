@@ -161,10 +161,46 @@
       return;
     }
     drawingLoader.classList.add('active');
-    var duration = 900;
+    var duration = 2000;
     var pauseRatio = 0.25 + Math.random() * 0.4;
     var pauseDuration = 160;
     var start = null;
+    var pageLoaded = false;
+    var finished = false;
+
+    function finish() {
+      if (finished) return;
+      finished = true;
+
+      if (pageLoaded) {
+        setTimeout(function () {
+          drawingLoader.classList.remove('active');
+          document.documentElement.classList.remove('drawer-ready');
+          setTimeout(function () {
+            if (drawingLoader.parentNode) drawingLoader.parentNode.removeChild(drawingLoader);
+          }, 400);
+          if (callback) callback();
+        }, 80);
+      } else {
+        if (drawingBar) drawingBar.style.width = '99%';
+        if (drawingPercent) drawingPercent.textContent = '99%';
+
+        window.addEventListener('load', function onLoad() {
+          pageLoaded = true;
+          window.removeEventListener('load', onLoad);
+          if (drawingBar) drawingBar.style.width = '100%';
+          if (drawingPercent) drawingPercent.textContent = '100%';
+          setTimeout(function () {
+            drawingLoader.classList.remove('active');
+            document.documentElement.classList.remove('drawer-ready');
+            setTimeout(function () {
+              if (drawingLoader.parentNode) drawingLoader.parentNode.removeChild(drawingLoader);
+            }, 400);
+            if (callback) callback();
+          }, 200);
+        });
+      }
+    }
 
     function tick(now) {
       if (!start) start = now;
@@ -183,24 +219,17 @@
         if (drawingPercent) drawingPercent.textContent = pct + '%';
         requestAnimationFrame(tick);
       } else {
-        var finish = Math.min(1, (elapsed - pauseRatio * duration - pauseDuration) / (duration - pauseRatio * duration - pauseDuration));
-        finish = isNaN(finish) ? 1 : finish;
-        var easedFinish = 1 - Math.pow(1 - finish, 3);
+        var finishRatio = Math.min(1, (elapsed - pauseRatio * duration - pauseDuration) / (duration - pauseRatio * duration - pauseDuration));
+        finishRatio = isNaN(finishRatio) ? 1 : finishRatio;
+        var easedFinish = 1 - Math.pow(1 - finishRatio, 3);
         var finalPct = Math.round((pauseRatio + easedFinish * (1 - pauseRatio)) * 100);
         if (drawingBar) drawingBar.style.width = finalPct + '%';
         if (drawingPercent) drawingPercent.textContent = finalPct + '%';
 
-        if (finish < 1) {
+        if (finishRatio < 1) {
           requestAnimationFrame(tick);
         } else {
-          setTimeout(function () {
-            drawingLoader.classList.remove('active');
-            document.documentElement.classList.remove('drawer-ready');
-            setTimeout(function () {
-              if (drawingLoader.parentNode) drawingLoader.parentNode.removeChild(drawingLoader);
-            }, 400);
-            if (callback) callback();
-          }, 80);
+          finish();
         }
       }
     }
@@ -400,11 +429,22 @@
     var el = document.getElementById(item.id);
     if (!el) return;
     el.classList.add('active');
+
     setTimeout(function () {
-      el.classList.remove('active');
-      setTimeout(function () {
-        if (el.parentNode) el.parentNode.removeChild(el);
-      }, 400);
-    }, 900);
+      if (document.readyState === 'complete') {
+        el.classList.remove('active');
+        setTimeout(function () {
+          if (el.parentNode) el.parentNode.removeChild(el);
+        }, 400);
+      } else {
+        window.addEventListener('load', function onLoad() {
+          window.removeEventListener('load', onLoad);
+          el.classList.remove('active');
+          setTimeout(function () {
+            if (el.parentNode) el.parentNode.removeChild(el);
+          }, 400);
+        });
+      }
+    }, 800);
   });
 })();

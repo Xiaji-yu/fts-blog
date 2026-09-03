@@ -1559,7 +1559,6 @@ html.drawer-ready .post-content-full {
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.35s ease;
 }
 
 .drawing-loader.active {
@@ -2638,7 +2637,6 @@ body.loaded .post-grid { animation-delay: 0.34s; }
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.35s ease;
 }
 
 .error-loader.active {
@@ -2691,7 +2689,6 @@ body.loaded .post-grid { animation-delay: 0.34s; }
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.35s ease;
 }
 
 .tags-loader.active {
@@ -2736,7 +2733,6 @@ body.loaded .post-grid { animation-delay: 0.34s; }
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.35s ease;
 }
 
 .admin-loader.active,
