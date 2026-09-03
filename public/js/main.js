@@ -167,11 +167,11 @@
     var start = null;
     var pageLoaded = false;
     var finished = false;
+    var loaderCompleted = false;
 
     function completeLoader() {
-      if (finished) return;
-      finished = true;
-      pageLoaded = true;
+      if (loaderCompleted) return;
+      loaderCompleted = true;
 
       if (drawingBar) drawingBar.style.width = '100%';
       if (drawingPercent) drawingPercent.textContent = '100%';
