@@ -14,6 +14,8 @@
 
   var docEl = document.documentElement;
 
+  var _timers = [];
+
   function scrollTop() {
     return window.scrollY || docEl.scrollTop || 0;
   }
@@ -217,9 +219,29 @@
     if (href.indexOf('/post/') !== 0) return;
     if (link.target && link.target !== '_self') return;
     e.preventDefault();
-    runDrawingLoader(function () {
-      window.location.href = href;
-    });
+    window.location.href = href;
+  });
+
+  /* ── Hover prefetch for article links ── */
+  var prefetchTimer = null;
+  document.addEventListener('mouseover', function (e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    var href = link.getAttribute('href');
+    if (!href) return;
+    if (href.indexOf('/post/') !== 0) return;
+    if (link.target && link.target !== '_self') return;
+    prefetchTimer = setTimeout(function () {
+      fetch(href, { mode: 'no-cors' });
+    }, 100);
+  });
+  document.addEventListener('mouseout', function (e) {
+    var link = e.target.closest('a[href]');
+    if (!link) return;
+    if (prefetchTimer) {
+      clearTimeout(prefetchTimer);
+      prefetchTimer = null;
+    }
   });
   var splash = document.getElementById('pageSplash');
   if (!splash) {
@@ -247,12 +269,12 @@
       if (ratio < pauseRatio) {
         var eased = 1 - Math.pow(1 - ratio / pauseRatio, 3);
         var pct = Math.round(eased * pauseRatio * 100);
-        if (bar) bar.style.width = pct + '%';
+        if (bar) bar.style.transform = 'scaleX(' + (pct / 100) + ')';
         if (percentEl) percentEl.textContent = pct + '%';
         requestAnimationFrame(tick);
       } else if (ratio < pauseRatio + pauseDuration / duration) {
         var pct = Math.round(pauseRatio * 100);
-        if (bar) bar.style.width = pct + '%';
+        if (bar) bar.style.transform = 'scaleX(' + (pct / 100) + ')';
         if (percentEl) percentEl.textContent = pct + '%';
         requestAnimationFrame(tick);
       } else {
@@ -260,7 +282,7 @@
         finish = isNaN(finish) ? 1 : finish;
         var easedFinish = 1 - Math.pow(1 - finish, 3);
         var finalPct = Math.round((pauseRatio + easedFinish * (1 - pauseRatio)) * 100);
-        if (bar) bar.style.width = finalPct + '%';
+        if (bar) bar.style.transform = 'scaleX(' + (finalPct / 100) + ')';
         if (percentEl) percentEl.textContent = finalPct + '%';
 
         if (finish < 1) {
@@ -298,7 +320,7 @@
       requestAnimationFrame(function () {
         var scrollable = docEl.scrollHeight - docEl.clientHeight;
         var ratio = scrollable > 0 ? scrollTop() / scrollable : 0;
-        progress.style.width = (Math.min(1, Math.max(0, ratio)) * 100).toFixed(2) + '%';
+        progress.style.transform = 'scaleX(' + Math.min(1, Math.max(0, ratio)).toFixed(4) + ')';
         ticking = false;
       });
     };
@@ -325,16 +347,27 @@
   if (typewriter && !reducedMotion) {
     var text = typewriter.getAttribute('data-text') || typewriter.textContent || '';
     if (text) {
+      var chars = Array.from(text);
       var index = 0;
       typewriter.textContent = '';
       var typeNext = function () {
         index += 1;
-        typewriter.textContent = text.slice(0, index);
-        if (index < text.length) {
-          setTimeout(typeNext, 55 + Math.random() * 55);
+        typewriter.textContent = chars.slice(0, index).join('');
+        if (index < chars.length) {
+          var typeTimer = setTimeout(typeNext, 55 + Math.random() * 55);
+          _timers.push(typeTimer);
         }
       };
-      setTimeout(typeNext, 350);
+      var typeTimer = setTimeout(typeNext, 350);
+      _timers.push(typeTimer);
     }
   }
+
+  /* ── Timer cleanup on unload ── */
+  window.addEventListener('beforeunload', function () {
+    _timers.forEach(function (id) { clearTimeout(id); });
+  });
+  window.addEventListener('pagehide', function () {
+    _timers.forEach(function (id) { clearTimeout(id); });
+  });
 })();

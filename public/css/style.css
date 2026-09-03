@@ -265,7 +265,6 @@ body::after {
   padding: var(--spacing-sm);
   background: var(--bg-card);
   backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -276,6 +275,7 @@ body::after {
   width: 100%;
   overflow: hidden;
   min-height: 0;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 }
 
 /* Corner marks (technical drawing style) */
@@ -404,29 +404,16 @@ body::after {
 .tag {
   display: inline-block;
   font-family: var(--font-mono);
-  font-size: 0.65rem;
-  letter-spacing: 0.04em;
-  padding: 0.2rem 0.5rem;
-  border: 1px solid var(--border-strong);
-  color: var(--fg-dim);
-  text-decoration: none;
-  transition: all 0.2s ease;
-  background: rgba(100, 200, 255, 0.05);
-  white-space: nowrap;
-  line-height: 1.4;
-}
-
-.tag {
-  display: inline-block;
-  font-family: var(--font-mono);
   font-size: 0.75rem;
   letter-spacing: 0.06em;
   padding: 0.3rem 0.7rem;
   border: 1px solid var(--border-strong);
   color: var(--fg-dim);
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
   background: rgba(100, 200, 255, 0.05);
+  white-space: nowrap;
+  line-height: 1.4;
 }
 
 .tag:hover {
@@ -585,6 +572,12 @@ body::after {
   outline: none;
   border-color: var(--border-strong);
   box-shadow: 0 0 10px rgba(100, 200, 255, 0.2);
+}
+
+.form-input:focus-visible,
+.form-textarea:focus-visible {
+  outline: 2px solid rgba(100, 200, 255, 0.6);
+  outline-offset: 2px;
 }
 
 .form-textarea {
@@ -970,7 +963,7 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1001;
   backdrop-filter: blur(4px);
 }
 
@@ -1093,12 +1086,15 @@ body::after {
   top: 0;
   left: 0;
   height: 3px;
-  width: 0;
+  width: 100%;
   background: linear-gradient(90deg, var(--accent), #ffb347);
   box-shadow: 0 0 12px var(--accent-glow);
-  z-index: 1000;
+  z-index: 999;
   pointer-events: none;
-  transition: width 80ms linear;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 80ms linear;
+  will-change: transform;
 }
 
 /* ── Back to top ── */
@@ -1313,11 +1309,12 @@ body::after {
   background: linear-gradient(180deg, transparent, rgba(100, 200, 255, 0.12), transparent);
   animation: scan-sweep 7s ease-in-out infinite;
   pointer-events: none;
+  will-change: transform;
 }
 
 @keyframes scan-sweep {
-  0% { top: -10%; }
-  55%, 100% { top: 110%; }
+  0% { transform: translateY(0); }
+  55%, 100% { transform: translateY(calc(100vh + 20%)); }
 }
 
 /* ── Responsive ── */
@@ -1469,10 +1466,13 @@ body::after {
   top: 0;
   left: 0;
   height: 100%;
-  width: 0;
+  width: 100%;
   background: linear-gradient(90deg, var(--accent), #ffb347);
   box-shadow: 0 0 14px var(--accent-glow);
-  transition: width 0.08s linear;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.08s linear;
+  will-change: transform;
 }
 
 /* Ruler ticks */
@@ -1806,7 +1806,7 @@ body.page-splash-active {
   background: var(--bg-card);
   backdrop-filter: blur(10px);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
   touch-action: none;
 }
 
