@@ -1,4 +1,11 @@
-<%- include('partials/header', { title: title }) %>
+<%- include('partials/header', { title: title, noSplash: true }) %>
+
+<div id="tagsLoader" class="tags-loader" aria-hidden="true">
+  <div class="tags-loader-inner">
+    <div class="tags-loader-title">标签索引</div>
+    <div class="tags-loader-sub">TAG INDEX · LOADING</div>
+  </div>
+</div>
 
 <div class="title-block">
   <h1 class="main-title">标签 · TAGS</h1>

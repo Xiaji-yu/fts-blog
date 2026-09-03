@@ -2624,3 +2624,149 @@ body.loaded .post-grid { animation-delay: 0.34s; }
     transform: rotate(360deg);
   }
 }
+
+/* ═══════════════════════════════════════════
+   404 error loader
+   ═══════════════════════════════════════════ */
+.error-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1900;
+  background: linear-gradient(to bottom, #0a1929, #152e4a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.error-loader.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.error-loader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.error-loader-code {
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 24px rgba(100, 200, 255, 0.5);
+}
+
+.error-loader-text {
+  font-family: var(--font-mono);
+  font-size: clamp(1rem, 3vw, 1.4rem);
+  font-weight: 700;
+  color: var(--fg);
+  letter-spacing: 0.15em;
+}
+
+.error-loader-sub {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.2em;
+  opacity: 0.7;
+}
+
+/* ═══════════════════════════════════════════
+   Tags page loader
+   ═══════════════════════════════════════════ */
+.tags-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1900;
+  background: linear-gradient(to bottom, #0a1929, #152e4a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.tags-loader.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tags-loader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.tags-loader-title {
+  font-family: var(--font-mono);
+  font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+  font-weight: 700;
+  color: var(--fg);
+  letter-spacing: 0.15em;
+}
+
+.tags-loader-sub {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.2em;
+  opacity: 0.7;
+}
+
+/* ═══════════════════════════════════════════
+   Admin / API shared loader style
+   ═══════════════════════════════════════════ */
+.admin-loader,
+.api-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1900;
+  background: linear-gradient(to bottom, #0a1929, #152e4a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.admin-loader.active,
+.api-loader.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.admin-loader-inner,
+.api-loader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.admin-loader-title,
+.api-loader-title {
+  font-family: var(--font-mono);
+  font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+  font-weight: 700;
+  color: var(--fg);
+  letter-spacing: 0.15em;
+}
+
+.admin-loader-sub,
+.api-loader-sub {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.2em;
+  opacity: 0.7;
+}

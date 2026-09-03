@@ -1,4 +1,12 @@
-<%- include('partials/header', { title: title }) %>
+<%- include('partials/header', { title: title, noSplash: true }) %>
+
+<div id="errorLoader" class="error-loader" aria-hidden="true">
+  <div class="error-loader-inner">
+    <div class="error-loader-code">ERR_404</div>
+    <div class="error-loader-text">图纸未找到</div>
+    <div class="error-loader-sub">DRAWING NOT FOUND</div>
+  </div>
+</div>
 
 <div class="title-block">
   <h1 class="main-title"><%= config.errors['404'].errorCode %></h1>

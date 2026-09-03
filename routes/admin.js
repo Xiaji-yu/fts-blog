@@ -28,7 +28,8 @@ router.get('/login', (req, res) => {
   res.render('admin-login', {
     title: config.admin.loginTitle || 'Admin Login',
     blueprint: config.features.blueprint,
-    nMark: config.features.nMark
+    nMark: config.features.nMark,
+    noSplash: true
   });
 });
 
@@ -40,7 +41,8 @@ router.post('/login', loginLimiter, async (req, res) => {
       title: config.admin.loginTitle || 'Admin Login',
       error,
       blueprint: config.features.blueprint,
-      nMark: config.features.nMark
+      nMark: config.features.nMark,
+      noSplash: true
     });
 
     if (!username || !password) {
@@ -76,7 +78,8 @@ router.post('/login', loginLimiter, async (req, res) => {
       title: config.admin.loginTitle || 'Admin Login',
       error: 'Server error',
       blueprint: config.features.blueprint,
-      nMark: config.features.nMark
+      nMark: config.features.nMark,
+      noSplash: true
     });
   }
 });
@@ -101,7 +104,8 @@ router.get('/', requireAuthView, async (req, res) => {
       posts,
       username: req.session.username,
       blueprint: config.features.blueprint,
-      nMark: config.features.nMark
+      nMark: config.features.nMark,
+      noSplash: true
     });
   } catch (err) {
     console.error('Dashboard error:', err);
@@ -116,7 +120,8 @@ router.get('/new', requireAuthView, (req, res) => {
     post: null,
     username: req.session.username,
     blueprint: config.features.blueprint,
-    nMark: config.features.nMark
+    nMark: config.features.nMark,
+    noSplash: true
   });
 });
 
@@ -151,7 +156,8 @@ router.get('/edit/:id', requireAuthView, async (req, res) => {
       },
       username: req.session.username,
       blueprint: config.features.blueprint,
-      nMark: config.features.nMark
+      nMark: config.features.nMark,
+      noSplash: true
     });
   } catch (err) {
     console.error('Edit post error:', err);
@@ -186,7 +192,8 @@ router.post('/preview', requireAuthView, (req, res) => {
     },
     username: req.session.username,
     blueprint: config.features.blueprint,
-    nMark: config.features.nMark
+    nMark: config.features.nMark,
+    noSplash: true
   });
 });
 

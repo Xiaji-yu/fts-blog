@@ -1,4 +1,11 @@
-<%- include('partials/header', { title: title }) %>
+<%- include('partials/header', { title: title, noSplash: true }) %>
+
+<div id="adminImportLoader" class="admin-loader" aria-hidden="true">
+  <div class="admin-loader-inner">
+    <div class="admin-loader-title">数据导入</div>
+    <div class="admin-loader-sub">IMPORT · LOADING</div>
+  </div>
+</div>
 
 <div class="nav">
   <a href="/admin" class="nav-brand"><%= config.admin.navBrand %></a>

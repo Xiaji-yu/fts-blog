@@ -1,4 +1,11 @@
-<%- include('partials/header', { title: title, wide: true }) %>
+<%- include('partials/header', { title: title, wide: true, noSplash: true }) %>
+
+<div id="adminPreviewLoader" class="admin-loader" aria-hidden="true">
+  <div class="admin-loader-inner">
+    <div class="admin-loader-title">预览模式</div>
+    <div class="admin-loader-sub">PREVIEW · LOADING</div>
+  </div>
+</div>
 
 <div class="nav">
   <a href="/admin" class="nav-brand"><%= config.admin.navBrand %></a>

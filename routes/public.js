@@ -283,7 +283,8 @@ router.get('/tags', async (req, res) => {
       title: `标签 · Tags — ${config.site.name}`,
       tags,
       blueprint: config.features.blueprint,
-      nMark: config.features.nMark
+      nMark: config.features.nMark,
+      noSplash: true
     });
   } catch (err) {
     console.error('Tags page error:', err);
@@ -308,7 +309,8 @@ router.get('/tag/:name', async (req, res) => {
       posts,
       total,
       blueprint: config.features.blueprint,
-      nMark: config.features.nMark
+      nMark: config.features.nMark,
+      noSplash: true
     });
   } catch (err) {
     console.error('Tag page error:', err);
@@ -408,7 +410,8 @@ router.get('/api', (req, res) => {
   res.render('api-info', {
     title: config.api.pageTitle,
     blueprint: config.features.blueprint,
-    nMark: config.features.nMark
+    nMark: config.features.nMark,
+    noSplash: true
   });
 });
 

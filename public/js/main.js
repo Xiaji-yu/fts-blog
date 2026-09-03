@@ -383,4 +383,28 @@
   window.addEventListener('pagehide', function () {
     _timers.forEach(function (id) { clearTimeout(id); });
   });
+
+  /* ── Page-specific loaders (404 / tags / admin / api / search) ── */
+  var loaderMap = [
+    { id: 'errorLoader', cls: 'error-loader' },
+    { id: 'tagsLoader', cls: 'tags-loader' },
+    { id: 'adminLoginLoader', cls: 'admin-loader' },
+    { id: 'adminDashboardLoader', cls: 'admin-loader' },
+    { id: 'adminEditorLoader', cls: 'admin-loader' },
+    { id: 'adminImportLoader', cls: 'admin-loader' },
+    { id: 'adminPreviewLoader', cls: 'admin-loader' },
+    { id: 'apiInfoLoader', cls: 'api-loader' }
+  ];
+
+  loaderMap.forEach(function (item) {
+    var el = document.getElementById(item.id);
+    if (!el) return;
+    el.classList.add('active');
+    setTimeout(function () {
+      el.classList.remove('active');
+      setTimeout(function () {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 400);
+    }, 900);
+  });
 })();

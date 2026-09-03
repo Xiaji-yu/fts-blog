@@ -21,7 +21,8 @@ router.get('/import', requireAuthView, (req, res) => {
     title: 'Import from Obsidian',
     username: req.session.username,
     blueprint: true,
-    nMark: true
+    nMark: true,
+    noSplash: true
   });
 });
 

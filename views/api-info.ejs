@@ -1,4 +1,11 @@
-<%- include('partials/header', { title: title }) %>
+<%- include('partials/header', { title: title, noSplash: true }) %>
+
+<div id="apiInfoLoader" class="api-loader" aria-hidden="true">
+  <div class="api-loader-inner">
+    <div class="api-loader-title">API 文档</div>
+    <div class="api-loader-sub">INTERFACE DOCUMENTATION · LOADING</div>
+  </div>
+</div>
 
 <div class="title-block">
   <h1 class="main-title"><%= config.api.pageTitle %></h1>
