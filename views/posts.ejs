@@ -29,10 +29,16 @@
 </div>
 
 <div class="hero-actions">
-  <form method="GET" action="/search" class="hero-search" role="search">
+<form method="GET" action="/search" class="hero-search search-form" role="search">
+  <div class="search-input-wrap">
     <input type="search" name="q" class="form-input" placeholder="查询图纸 · QUERY DRAWINGS…" aria-label="站内搜索" required>
     <button type="submit" class="btn btn-sm">查询 · QUERY</button>
-  </form>
+  </div>
+  <div class="search-loader" aria-hidden="true">
+    <div class="search-loader-ring"></div>
+    <div class="search-loader-text">检索中</div>
+  </div>
+</form>
 </div>
 
 <div class="drum-viewport" id="drumViewport" tabindex="0" role="listbox" aria-label="图纸数据库">

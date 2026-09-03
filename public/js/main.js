@@ -246,10 +246,14 @@
   });
 
   /* ── Search form loading state ── */
-  var searchForms = document.querySelectorAll('.search-form');
+  var searchForms = document.querySelectorAll('.search-form, .hero-search');
   searchForms.forEach(function (form) {
-    form.addEventListener('submit', function () {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
       form.classList.add('loading');
+      setTimeout(function () {
+        form.submit();
+      }, 60);
     });
   });
   var splash = document.getElementById('pageSplash');
