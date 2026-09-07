@@ -53,6 +53,22 @@ test('convertObsidianSyntax: table pipes are escaped', () => {
   assert.ok(out.includes('a\\|b'));
 });
 
+test('convertObsidianSyntax: multi-column separator rows are not escaped', () => {
+  const out = convertObsidianSyntax('| a | b | c |\n|------|------|------|\n| 1 | 2 | 3 |');
+  assert.ok(out.includes('|------|------|------|'));
+  assert.ok(!out.includes('\\|'));
+});
+
+test('convertObsidianSyntax: real 4-column report table renders as table', () => {
+  const md = `| 场景 | 根因一（端口丢失） | 根因二（域名信任） | 影响 |
+|------|------------------|------------------|------|
+| 内网 IP 直连 | ✓ | ✗ | 403 |
+| 域名访问 | ✓ | ✓ | 403 |`;
+  const out = convertObsidianSyntax(md);
+  assert.ok(out.includes('|------|------------------|------------------|------|'));
+  assert.ok(!out.includes('\\|'));
+});
+
 test('escapeTablePipes: preserves already-escaped pipes', () => {
   assert.equal(escapeTablePipes('| a\\|b | c |'), '| a\\|b | c |');
 });

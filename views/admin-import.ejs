@@ -276,12 +276,28 @@ function convertObsidianSyntax(content) {
     // Table row: escape pipes inside cells
     const trimmed = line.trim();
     const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|');
-    const isTableSep = /^\|?[\s\-:]+\|[\s\-:]+\|?$/.test(trimmed);
+    const isTableSep = /^\|?[\s\-:]+(\|[\s\-:]*)+\|?$/.test(trimmed);
 
     if (isTableRow && !isTableSep) {
-      const parts = trimmed.split('|');
-      const escaped = parts.map(p => p.replace(/\\\|/g, '|').replace(/\|/g, '\\|')).join('|');
-      result.push(escaped);
+      // Escape table pipes (browser-compatible)
+      let out = '';
+      for (let i = 0; i < trimmed.length; i++) {
+        const ch = trimmed[i];
+        if (ch === '|') {
+          const isBoundary = i === 0 || i === trimmed.length - 1;
+          const alreadyEscaped = out.endsWith('\\');
+          const prevIsSpace = out.endsWith(' ');
+          const nextIsSpace = i + 1 < trimmed.length ? /\s/.test(trimmed[i + 1]) : true;
+          if (isBoundary || alreadyEscaped || (prevIsSpace && nextIsSpace)) {
+            out += ch;
+          } else {
+            out += '\\|';
+          }
+        } else {
+          out += ch;
+        }
+      }
+      result.push(out);
       continue;
     }
 
