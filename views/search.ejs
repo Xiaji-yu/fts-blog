@@ -1,5 +1,13 @@
 <%- include('partials/header', { title: title, noSplash: true }) %>
 
+<div id="searchPageLoader" class="search-page-loader active" aria-hidden="true">
+  <div class="search-page-loader-inner">
+    <div class="search-page-loader-ring"></div>
+    <div class="search-page-loader-text">检索中</div>
+    <div class="search-page-loader-sub">QUERYING DATABASE · LOADING</div>
+  </div>
+</div>
+
 <div class="title-block">
   <h1 class="main-title"><%= heading %></h1>
   <% if (mode === 'search') { %>

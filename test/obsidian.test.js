@@ -73,6 +73,29 @@ test('escapeTablePipes: preserves already-escaped pipes', () => {
   assert.equal(escapeTablePipes('| a\\|b | c |'), '| a\\|b | c |');
 });
 
+test('convertObsidianSyntax: wiki links inside table cells are converted', () => {
+  const out = convertObsidianSyntax('| 笔记 | 链接 |\n|---|---|\n| [[Some Note]] | b |');
+  assert.ok(out.includes('[Some Note](/post/some-note)'), 'wiki link converted to markdown link');
+  assert.ok(!out.includes('[[Some Note]]'), 'no raw wiki syntax left');
+});
+
+test('convertObsidianSyntax: alias pipe in table cell is consumed, not escaped', () => {
+  const out = convertObsidianSyntax('| 链接 | 值 |\n|---|---|\n| [[Link|Alias]] | 1 |');
+  assert.ok(out.includes('[Alias](/post/link)'), 'alias link converted');
+  assert.ok(!out.includes('\\|'), 'no escaped pipes left behind');
+});
+
+test('convertObsidianSyntax: embeds inside table cells are converted', () => {
+  const out = convertObsidianSyntax('| 图 | 说明 |\n|---|---|\n| ![[img.png]] | 示例 |');
+  assert.ok(out.includes('![img.png](/uploads/img.png)'), 'embed converted to image reference');
+});
+
+test('convertObsidianSyntax: table conversion is idempotent (client+server double run)', () => {
+  const once = convertObsidianSyntax('| [[Note]] | a|b |\n|---|---|\n| 1 | 2 |');
+  const twice = convertObsidianSyntax(once);
+  assert.equal(once, twice, 'double conversion must not change output');
+});
+
 test('normalizeYamlValue: converts Date instances to ISO strings', () => {
   const d = new Date('2026-01-02T03:04:05Z');
   assert.equal(normalizeYamlValue(d), '2026-01-02T03:04:05.000Z');

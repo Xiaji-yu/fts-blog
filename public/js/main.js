@@ -155,8 +155,20 @@
   var drawingPercent = document.getElementById('drawingPercent');
   var isArticlePage = !!drawingLoader;
 
+  // Safety net: never let a loader cover the page longer than this,
+  // even if window.load never fires (stalled subresource, throttled tab).
+  var LOADER_FORCE_TIMEOUT = 8000;
+
   function runDrawingLoader(callback) {
-    if (!drawingLoader || reducedMotion) {
+    if (!drawingLoader) {
+      if (callback) callback();
+      return;
+    }
+    if (reducedMotion) {
+      // Loader div ships with .active server-side; clean it up at once.
+      drawingLoader.classList.remove('active');
+      document.documentElement.classList.remove('drawer-ready');
+      if (drawingLoader.parentNode) drawingLoader.parentNode.removeChild(drawingLoader);
       if (callback) callback();
       return;
     }
@@ -168,10 +180,12 @@
     var pageLoaded = false;
     var finished = false;
     var loaderCompleted = false;
+    var forceTimer = setTimeout(completeLoader, LOADER_FORCE_TIMEOUT);
 
     function completeLoader() {
       if (loaderCompleted) return;
       loaderCompleted = true;
+      clearTimeout(forceTimer);
 
       if (drawingBar) drawingBar.style.width = '100%';
       if (drawingPercent) drawingPercent.textContent = '100%';
@@ -439,7 +453,8 @@
     { id: 'adminEditorLoader', cls: 'admin-loader' },
     { id: 'adminImportLoader', cls: 'admin-loader' },
     { id: 'adminPreviewLoader', cls: 'admin-loader' },
-    { id: 'apiInfoLoader', cls: 'api-loader' }
+    { id: 'apiInfoLoader', cls: 'api-loader' },
+    { id: 'searchPageLoader', cls: 'search-page-loader' }
   ];
 
   loaderMap.forEach(function (item) {
@@ -447,20 +462,27 @@
     if (!el) return;
     el.classList.add('active');
 
+    var removed = false;
+    function removeLoader() {
+      if (removed) return;
+      removed = true;
+      el.classList.remove('active');
+      setTimeout(function () {
+        if (el.parentNode) el.parentNode.removeChild(el);
+      }, 400);
+    }
+
+    // Reveal no earlier than 800ms, then hide on load — or force-hide
+    // after the safety timeout if load never fires.
     setTimeout(function () {
       if (document.readyState === 'complete') {
-        el.classList.remove('active');
-        setTimeout(function () {
-          if (el.parentNode) el.parentNode.removeChild(el);
-        }, 400);
+        removeLoader();
       } else {
         window.addEventListener('load', function onLoad() {
           window.removeEventListener('load', onLoad);
-          el.classList.remove('active');
-          setTimeout(function () {
-            if (el.parentNode) el.parentNode.removeChild(el);
-          }, 400);
+          removeLoader();
         });
+        setTimeout(removeLoader, LOADER_FORCE_TIMEOUT);
       }
     }, 800);
   });

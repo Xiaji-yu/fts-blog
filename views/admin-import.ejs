@@ -1,6 +1,6 @@
 <%- include('partials/header', { title: title, noSplash: true }) %>
 
-<div id="adminImportLoader" class="admin-loader" aria-hidden="true">
+<div id="adminImportLoader" class="admin-loader active" aria-hidden="true">
   <div class="admin-loader-inner">
     <div class="admin-loader-title">数据导入</div>
     <div class="admin-loader-sub">IMPORT · LOADING</div>
@@ -245,7 +245,54 @@ function convertObsidianSyntax(content) {
   // Browser-compatible extname (no Node.js path module)
   function getExt(filename) {
     const dotIdx = filename.lastIndexOf('.');
-    return dotIdx >= 0 ? filename.slice(dotIdx).toLowerCase() : '';
+    const ext = dotIdx >= 0 ? filename.slice(dotIdx).toLowerCase() : '';
+    return ext;
+  }
+
+  // Escape pipe characters inside table cells; delimiter pipes (boundaries or
+  // space-surrounded) and already-escaped pipes are kept as-is.
+  function escapeTablePipes(trimmed) {
+    let out = '';
+    for (let i = 0; i < trimmed.length; i++) {
+      const ch = trimmed[i];
+      if (ch === '|') {
+        const isBoundary = i === 0 || i === trimmed.length - 1;
+        const alreadyEscaped = out.endsWith('\\');
+        const prevIsSpace = out.endsWith(' ');
+        const nextIsSpace = i + 1 < trimmed.length ? /\s/.test(trimmed[i + 1]) : true;
+        if (isBoundary || alreadyEscaped || (prevIsSpace && nextIsSpace)) {
+          out += ch;
+        } else {
+          out += '\\|';
+        }
+      } else {
+        out += ch;
+      }
+    }
+    return out;
+  }
+
+  // Convert embeds & wiki links. Runs BEFORE pipe escaping on table rows so
+  // the `|` alias separator in [[Link|Alias]] is consumed by the link syntax
+  // instead of being escaped.
+  function convertLinksAndEmbeds(line) {
+    // Step 1: Embeds ![[file]] - must come before wiki links
+    let processed = line.replace(/!\[\[([^\]]+)\]\]/g, (match, file) => {
+      const ext = getExt(file);
+      if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) {
+        return `![${file}](/uploads/${file})`;
+      }
+      return `[${file}](/uploads/${file})`;
+    });
+
+    // Step 2: Wiki links [[Link]] or [[Link|Alias]]
+    processed = processed.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, link, alias) => {
+      const text = alias || link;
+      const slug = link.toLowerCase().replace(/[^a-z0-9一-龥]+/g, '-').replace(/^-+|-+$/g, '');
+      return `[${text}](/post/${slug})`;
+    });
+
+    return processed;
   }
 
   for (let i = 0; i < lines.length; i++) {
@@ -273,51 +320,17 @@ function convertObsidianSyntax(content) {
       }
     }
 
-    // Table row: escape pipes inside cells
+    // Table row: convert links first, then escape remaining pipes in cells
     const trimmed = line.trim();
     const isTableRow = trimmed.startsWith('|') && trimmed.endsWith('|');
     const isTableSep = /^\|?[\s\-:]+(\|[\s\-:]*)+\|?$/.test(trimmed);
 
     if (isTableRow && !isTableSep) {
-      // Escape table pipes (browser-compatible)
-      let out = '';
-      for (let i = 0; i < trimmed.length; i++) {
-        const ch = trimmed[i];
-        if (ch === '|') {
-          const isBoundary = i === 0 || i === trimmed.length - 1;
-          const alreadyEscaped = out.endsWith('\\');
-          const prevIsSpace = out.endsWith(' ');
-          const nextIsSpace = i + 1 < trimmed.length ? /\s/.test(trimmed[i + 1]) : true;
-          if (isBoundary || alreadyEscaped || (prevIsSpace && nextIsSpace)) {
-            out += ch;
-          } else {
-            out += '\\|';
-          }
-        } else {
-          out += ch;
-        }
-      }
-      result.push(out);
+      result.push(escapeTablePipes(convertLinksAndEmbeds(line)));
       continue;
     }
 
-    // Step 1: Embeds ![[file]] - must come before wiki links
-    let processed = line.replace(/!\[\[([^\]]+)\]\]/g, (match, file) => {
-      const ext = getExt(file);
-      if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'].includes(ext)) {
-        return `![${file}](/uploads/${file})`;
-      }
-      return `[${file}](/uploads/${file})`;
-    });
-
-    // Step 2: Wiki links [[Link]] or [[Link|Alias]]
-    processed = processed.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, link, alias) => {
-      const text = alias || link;
-      const slug = link.toLowerCase().replace(/[^a-z0-9一-龥]+/g, '-').replace(/^-+|-+$/g, '');
-      return `[${text}](/post/${slug})`;
-    });
-
-    result.push(processed);
+    result.push(convertLinksAndEmbeds(line));
   }
 
   if (inCallout) result.push(...calloutLines);
