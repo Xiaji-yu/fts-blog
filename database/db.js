@@ -16,8 +16,6 @@ const DB_PATH = process.env.FTS_DB_PATH
   ? path.resolve(process.env.FTS_DB_PATH)
   : path.join(__dirname, '..', config.database.path);
 
-const SAVE_TIMEOUT_MS = config.database.saveTimeoutMs || 30000;
-
 let db = null;
 let SQL = null;
 const opQueue = [];
@@ -40,16 +38,6 @@ async function ensureDb() {
     ? new SQL.Database(new Uint8Array(fs.readFileSync(DB_PATH)))
     : new SQL.Database();
   return db;
-}
-
-function withTimeout(promise, ms = SAVE_TIMEOUT_MS) {
-  let timeoutId;
-  const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => {
-      reject(new Error(`Database save timed out after ${ms}ms`));
-    }, ms);
-  });
-  return Promise.race([promise.finally(() => clearTimeout(timeoutId)), timeoutPromise]);
 }
 
 async function persist() {

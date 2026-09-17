@@ -231,8 +231,7 @@ fts-blog/
 ├── 经验/                       # Obsidian 笔记源目录
 ├── examples/                  # 导入示例文件
 ├── test/                      # node:test 自动化测试
-├── deploy_config.example.py   # 部署凭证模板（复制为 deploy_config.py 并填写）
-└── deploy_*.py                # 远程部署脚本（PM2/SSH，凭证从 deploy_config.py 读取）
+└── (无部署脚本；生产更新走 git pull + npm ci + pm2 restart)
 ```
 
 ## 🧪 测试

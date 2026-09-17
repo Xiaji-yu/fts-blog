@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -22,7 +23,7 @@ if (!fs.existsSync(UPLOAD_DIR)) {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + crypto.randomBytes(8).toString('hex');
     cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
@@ -43,18 +44,52 @@ const upload = multer({
   limits: { fileSize: config.upload.maxFileSizeMB * 1024 * 1024 }
 });
 
+// Magic-byte signatures for the allowed image formats. Extension and MIME
+// checks alone are client-controlled and can be forged, so the actual file
+// content is verified after upload as well.
+const IMAGE_SIGNATURES = [
+  { format: 'jpeg', test: (b) => b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF },
+  { format: 'png', test: (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47 },
+  { format: 'gif', test: (b) => b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38 },
+  {
+    format: 'webp',
+    test: (b) => b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+      b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50
+  }
+];
+
+function verifyImageFile(filePath) {
+  const fd = fs.openSync(filePath, 'r');
+  try {
+    const buf = Buffer.alloc(16);
+    const bytesRead = fs.readSync(fd, buf, 0, 16, 0);
+    return IMAGE_SIGNATURES.some((sig) => sig.test(buf.subarray(0, bytesRead)));
+  } finally {
+    fs.closeSync(fd);
+  }
+}
+
 // Simple input validation helpers
+// CJK characters are allowed so posts imported from CJK-titled Obsidian
+// files keep their original, human-readable slugs (see routes/import.js).
+const SLUG_PATTERN = /^[a-z0-9一-龥-]+$/;
+
 function slugifySlug(value) {
-  return String(value || '').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+  return String(value || '').toLowerCase().replace(/[^a-z0-9一-龥-]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 function validatePostInput({ title, slug, content }) {
   if (!title || !String(title).trim()) return '标题不能为空 · Title is required';
   if (!slug || !String(slug).trim()) return 'Slug 不能为空 · Slug is required';
-  if (!/^[a-z0-9-]+$/.test(slug)) return 'Slug 仅允许小写字母、数字和连字符';
+  if (!SLUG_PATTERN.test(slug)) return 'Slug 仅允许小写字母、数字、连字符和中文 · Lowercase letters, numbers, hyphens and CJK only';
   if (!content || !String(content).trim()) return '内容不能为空 · Content is required';
   if (String(title).length > 200) return '标题过长 · Title too long';
   return null;
+}
+
+// Shared boolean normalization — a string like "false" must NOT be truthy.
+function normalizePublished(value) {
+  return (value === 'on' || value === true || value === 'true') ? 1 : 0;
 }
 
 function normalizeTags(tags) {
@@ -236,7 +271,7 @@ router.post('/posts', requireAuth, async (req, res) => {
     const postId = await db.transaction(async (tx) => {
       tx.run(
         'INSERT INTO posts (title, title_en, slug, content, excerpt, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [title, title_en || null, slugifySlug(slug), content, excerpt || null, published ? 1 : 0, now, now]
+        [title, title_en || null, slugifySlug(slug), content, excerpt || null, normalizePublished(published), now, now]
       );
       const id = tx.lastInsertRowid();
       await insertTags(tx, id, normalizeTags(tags));
@@ -291,7 +326,7 @@ router.put('/posts/:id', requireAuth, async (req, res) => {
     }
 
     const now = new Date().toISOString();
-    const publishedVal = (published === 'on' || published === true || published === 'true') ? 1 : 0;
+    const publishedVal = normalizePublished(published);
 
     await db.transaction(async (tx) => {
       tx.run(
@@ -382,6 +417,15 @@ router.post('/tags', requireAuth, async (req, res) => {
 router.post('/upload', requireAuth, upload.single('image'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
+  }
+  // Reject forged payloads disguised as images (extension/MIME are client-controlled).
+  if (!verifyImageFile(req.file.path)) {
+    try {
+      fs.unlinkSync(req.file.path);
+    } catch (err) {
+      console.error('Failed to remove invalid upload:', err.message);
+    }
+    return res.status(400).json({ error: 'File content is not a valid image' });
   }
   res.json({
     message: 'File uploaded successfully',

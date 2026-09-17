@@ -70,7 +70,7 @@ const defaults = {
         title: "标题 · Title (中文)",
         titleEn: "英文标题 · Title (EN)",
         slug: "URL标识 · Slug",
-        slugHint: "仅允许小写字母、数字和连字符 · Only lowercase letters, numbers, and hyphens",
+        slugHint: "小写字母、数字、连字符和中文 · Lowercase letters, numbers, hyphens and CJK",
         excerpt: "摘要 · Excerpt",
         content: "内容 · Content (Markdown)",
         tags: "标签 · Tags (逗号分隔)",
@@ -130,7 +130,8 @@ const defaults = {
     adminUrl: "http://localhost:3000/admin",
     apiUrl: "http://localhost:3000/api",
     jsonBodyLimit: "10mb",
-    urlEncodedBodyLimit: "10mb"
+    urlEncodedBodyLimit: "10mb",
+    trustProxy: false
   },
   database: {
     path: "data/blog.db",
@@ -151,15 +152,6 @@ const defaults = {
     cookieHttpOnly: true,
     cookieSameSite: "lax",
     maxAgeHours: 24
-  },
-  server: {
-    port: 3000,
-    publicUrl: "http://localhost:3000",
-    adminUrl: "http://localhost:3000/admin",
-    apiUrl: "http://localhost:3000/api",
-    jsonBodyLimit: "10mb",
-    urlEncodedBodyLimit: "10mb",
-    trustProxy: false
   },
   upload: {
     directory: "uploads",

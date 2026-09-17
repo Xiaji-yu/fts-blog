@@ -34,6 +34,14 @@ function tokensEqual(a, b) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
+// Decide the error shape: JSON for API/fetch callers, plain text for HTML forms.
+function isApiRequest(req) {
+  if ((req.baseUrl || '').startsWith('/api')) return true;
+  const accept = req.headers.accept || '';
+  const contentType = req.headers['content-type'] || '';
+  return accept.includes('application/json') || contentType.includes('application/json');
+}
+
 // Enforce CSRF on non-safe methods for the mounted router.
 function csrfProtect(req, res, next) {
   if (SAFE_METHODS.has(req.method)) return next();
@@ -46,8 +54,7 @@ function csrfProtect(req, res, next) {
 
   if (!expected || !sent || !tokensEqual(sent, expected)) {
     const message = 'CSRF token missing or invalid. Refresh the page and try again.';
-    // req.path is router-relative here; baseUrl tells us which mount we are in.
-    if ((req.baseUrl || '').startsWith('/api')) {
+    if (isApiRequest(req)) {
       return res.status(403).json({ error: message });
     }
     return res.status(403).send(message);

@@ -4,7 +4,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const config = require('../config/loader');
 const db = require('../database/db');
-const { requireAuthView } = require('../middleware/auth');
+const { requireAuth, requireAuthView } = require('../middleware/auth');
 const { generateToken, csrfProtect } = require('../middleware/csrf');
 const { loginLimiter } = require('../middleware/rateLimit');
 
@@ -165,8 +165,8 @@ router.get('/edit/:id', requireAuthView, async (req, res) => {
   }
 });
 
-// POST /admin/preview - Preview post
-router.post('/preview', requireAuthView, (req, res) => {
+// POST /admin/preview - Preview post (JSON API: unauthenticated gets 401, not a redirect)
+router.post('/preview', requireAuth, (req, res) => {
   const body = req.body;
 
   let tagList = [];

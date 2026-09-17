@@ -61,7 +61,7 @@
 
             <div class="form-group">
               <label class="form-label" for="slug"><%= config.admin.editor.labels.slug %></label>
-              <input type="text" id="slug" name="slug" class="form-input" value="<%= post ? post.slug : '' %>" required pattern="[a-z0-9-]+" title="Only lowercase letters, numbers, and hyphens">
+              <input type="text" id="slug" name="slug" class="form-input" value="<%= post ? post.slug : '' %>" required pattern="[a-z0-9一-龥-]+" title="小写字母、数字、连字符和中文 · Lowercase letters, numbers, hyphens and CJK">
               <small style="color: var(--muted); font-size: 0.8rem; margin-top: 0.25rem; display: block;">
                 <%= config.admin.editor.labels.slugHint %>
               </small>

@@ -422,17 +422,6 @@ body::after {
   box-shadow: 0 0 10px rgba(100, 200, 255, 0.2);
 }
 
-.card-footer {
-  margin-top: auto;
-  padding-top: var(--spacing-sm);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-sm);
-  flex-shrink: 0;
-  min-height: 0;
-}
-
 .card-link {
   display: inline-flex;
   align-items: center;
@@ -443,7 +432,7 @@ body::after {
   letter-spacing: 0.1em;
   color: var(--fg);
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
   margin-left: auto;
 }
 
@@ -470,7 +459,7 @@ body::after {
   max-width: 1340px;
 }
 
-@Media (max-width: 1200px) {
+@media (max-width: 1200px) {
   .post-grid {
     grid-template-columns: repeat(2, 1fr);
     max-width: 920px;
@@ -503,7 +492,7 @@ body::after {
   color: var(--fg);
   text-decoration: none;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
   backdrop-filter: blur(5px);
 }
 
@@ -564,7 +553,7 @@ body::after {
   border: 1px solid var(--border);
   background: rgba(10, 25, 41, 0.6);
   color: var(--fg);
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .form-input:focus,
@@ -730,7 +719,7 @@ body::after {
   letter-spacing: 0.04em;
   color: var(--muted);
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease, border-left-color 0.2s ease, background 0.2s ease;
   line-height: 1.6;
   padding: 0.3rem 0.5rem;
   border-left: 2px solid transparent;
@@ -938,7 +927,7 @@ body::after {
   padding: var(--spacing-lg);
   text-align: center;
   margin: var(--spacing-md) 0;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease;
   cursor: pointer;
 }
 
@@ -1114,7 +1103,7 @@ body::after {
   opacity: 0;
   visibility: hidden;
   transform: translateY(8px);
-  transition: all 0.25s ease;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
   z-index: 900;
   backdrop-filter: blur(6px);
 }
@@ -1234,7 +1223,7 @@ body::after {
   background: var(--bg-card);
   padding: var(--spacing-sm);
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
   min-width: 0;
 }
 
@@ -1707,7 +1696,7 @@ html.drawer-ready .post-content-full {
   padding: var(--spacing-sm) var(--spacing-sm);
   border-bottom: 1px dashed var(--border);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, border-bottom-color 0.2s ease;
   text-decoration: none;
   color: inherit;
   border-left: 2px solid transparent;
@@ -2817,4 +2806,22 @@ body.loaded .post-grid { animation-delay: 0.34s; }
   color: var(--muted);
   letter-spacing: 0.2em;
   opacity: 0.7;
+}
+
+/* ── Keyboard focus visibility ── */
+/* One consistent accent ring for every interactive element so keyboard
+   users always see where focus is (form inputs keep their own rule). */
+.nav-links a:focus-visible,
+.btn:focus-visible,
+.btn-random:focus-visible,
+.card-link:focus-visible,
+.tag:focus-visible,
+.back-to-top:focus-visible,
+.modal-close:focus-visible,
+.hot-item:focus-visible,
+.drum-item:focus-visible,
+.footer-block a:focus-visible,
+.footer-block .field:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

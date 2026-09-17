@@ -71,7 +71,7 @@ function sanitizeImportError(message) {
 }
 
 // POST /admin/import/directory - Scan 经验/ folder and import all .md files
-router.post('/import/directory', requireAuthView, async (req, res) => {
+router.post('/import/directory', requireAuth, async (req, res) => {
   try {
     if (!fs.existsSync(OBSIDIAN_DIR)) {
       return res.json({
@@ -159,12 +159,12 @@ router.post('/import/directory', requireAuthView, async (req, res) => {
     });
   } catch (err) {
     console.error('Directory import failed:', err);
-    res.status(500).json({ error: 'Directory import failed: ' + err.message });
+    res.status(500).json({ error: 'Directory import failed' });
   }
 });
 
 // POST /admin/import - Process imported files (client-side parsed content)
-router.post('/import', requireAuthView, async (req, res) => {
+router.post('/import', requireAuth, async (req, res) => {
   try {
     const { files } = req.body;
 
@@ -226,7 +226,7 @@ router.post('/import', requireAuthView, async (req, res) => {
     });
   } catch (err) {
     console.error('Import failed:', err);
-    res.status(500).json({ error: 'Import failed: ' + err.message });
+    res.status(500).json({ error: 'Import failed' });
   }
 });
 

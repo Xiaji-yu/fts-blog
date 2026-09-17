@@ -25,6 +25,23 @@ const app = express();
 app.locals.config = config;
 app.locals.bp = config.blueprint;
 
+// ---------- Basic security headers ----------
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  next();
+});
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ---------- Markdown rendering with syntax highlighting + sanitization ----------
 marked.marked.use({
   renderer: {
@@ -61,11 +78,13 @@ try {
   };
   console.log('✓ DOMPurify sanitization enabled');
 } catch (err) {
-  console.warn('⚠ DOMPurify init failed, falling back to EJS escaping only:', err.message);
+  console.warn('⚠ DOMPurify init failed, falling back to escaped-plaintext rendering:', err.message);
   sanitizedMarked = {
     parse: (content) => {
       if (!content) return '';
-      return marked.marked.parse(content);
+      // Never emit un-sanitized HTML: escape the generated markup so it
+      // renders as inert text instead of live DOM.
+      return escapeHtml(marked.marked.parse(content));
     }
   };
 }
