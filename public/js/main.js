@@ -285,16 +285,19 @@
 
   /* ── Hover prefetch for article links ── */
   var prefetchTimer = null;
+  function prefetchPost(href) {
+    if (!href || href.indexOf('/post/') !== 0) return;
+    clearTimeout(prefetchTimer);
+    prefetchTimer = setTimeout(function () {
+      fetch(href, { mode: 'no-cors' });
+    }, 100);
+  }
   document.addEventListener('mouseover', function (e) {
     var link = e.target.closest('a[href]');
     if (!link) return;
     var href = link.getAttribute('href');
-    if (!href) return;
-    if (href.indexOf('/post/') !== 0) return;
     if (link.target && link.target !== '_self') return;
-    prefetchTimer = setTimeout(function () {
-      fetch(href, { mode: 'no-cors' });
-    }, 100);
+    prefetchPost(href);
   });
   document.addEventListener('mouseout', function (e) {
     var link = e.target.closest('a[href]');
@@ -303,6 +306,18 @@
       clearTimeout(prefetchTimer);
       prefetchTimer = null;
     }
+  });
+
+  /* ── Card double-click navigation (goes through prefetch, same as links) ── */
+  document.addEventListener('dblclick', function (e) {
+    var card = e.target.closest('[data-post-href]');
+    if (!card) return;
+    var href = card.getAttribute('data-post-href');
+    if (!href || href.indexOf('/post/') !== 0) return;
+    // Skip if the double-click landed on an interactive element (link/button).
+    if (e.target.closest('a[href], button')) return;
+    prefetchPost(href);
+    window.location.href = href;
   });
 
   /* ── Search form loading state ── */

@@ -90,65 +90,68 @@ router.post('/import/directory', requireAuth, async (req, res) => {
       return res.json({ success: true, imported: 0, failed: 0, details: { imported: [], failed: [] } });
     }
 
-    const result = await db.transaction(async (tx) => {
-      const imported = [];
-      const failed = [];
+    const result = { imported: [], failed: [] };
 
-      // Build slug -> id map for internal wiki links
-      const slugMapResult = tx.exec("SELECT slug, id FROM posts WHERE slug IS NOT NULL AND slug != ''");
-      const slugToIdMap = {};
-      for (const row of slugMapResult[0]?.values || []) {
-        slugToIdMap[row[0]] = row[1];
-      }
+    // Build slug -> id map for internal wiki links
+    const slugMapResult = await db.exec("SELECT slug, id FROM posts WHERE slug IS NOT NULL AND slug != ''");
+    const slugToIdMap = {};
+    for (const row of slugMapResult[0]?.values || []) {
+      slugToIdMap[row[0]] = row[1];
+    }
 
-      for (const filename of files) {
-        try {
-          // Path traversal protection: strip directory components and verify
-          const sanitized = path.basename(filename);
-          if (sanitized !== filename) {
-            failed.push({ filename, error: 'Invalid filename: path traversal detected' });
-            continue;
-          }
-          const filePath = path.join(OBSIDIAN_DIR, sanitized);
-          if (!filePath.startsWith(OBSIDIAN_DIR)) {
-            failed.push({ filename, error: 'Path traversal detected' });
-            continue;
-          }
+    for (const filename of files) {
+      try {
+        // Path traversal protection: strip directory components and verify
+        const sanitized = path.basename(filename);
+        if (sanitized !== filename) {
+          result.failed.push({ filename, error: 'Invalid filename: path traversal detected' });
+          continue;
+        }
+        const filePath = path.join(OBSIDIAN_DIR, sanitized);
+        if (!filePath.startsWith(OBSIDIAN_DIR)) {
+          result.failed.push({ filename, error: 'Path traversal detected' });
+          continue;
+        }
 
-          const rawContent = fs.readFileSync(filePath, 'utf-8');
-          const { frontmatter, content: markdownContent } = parseFrontmatter(rawContent);
+        const rawContent = fs.readFileSync(filePath, 'utf-8');
+        const { frontmatter, content: markdownContent } = parseFrontmatter(rawContent);
 
-          const normalized = {};
-          for (const [key, value] of Object.entries(frontmatter)) {
-            normalized[key] = normalizeYamlValue(value);
-          }
+        const normalized = {};
+        for (const [key, value] of Object.entries(frontmatter)) {
+          normalized[key] = normalizeYamlValue(value);
+        }
 
-          const title = normalized.title || path.basename(filename, config.import.fileExtension || '.md');
-          const titleEn = normalized.title_en || '';
-          const slug = slugFromFilename(filename);
+        const title = normalized.title || path.basename(filename, config.import.fileExtension || '.md');
+        const titleEn = normalized.title_en || '';
+        const slug = slugFromFilename(filename);
 
-          const excerptMatch = markdownContent.match(/^(.+?)(?:\n\n|$)/s);
-          const excerpt = excerptMatch ? excerptMatch[1].substring(0, config.import.excerptMaxLength || 200) : '';
+        const excerptMatch = markdownContent.match(/^(.+?)(?:\n\n|$)/s);
+        const excerpt = excerptMatch ? excerptMatch[1].substring(0, config.import.excerptMaxLength || 200) : '';
 
-          const convertedContent = convertObsidianSyntax(markdownContent, slugToIdMap);
+        const convertedContent = convertObsidianSyntax(markdownContent, slugToIdMap);
 
-          // Skip if post with this slug already exists (idempotent re-import)
-          const existing = tx.exec('SELECT id FROM posts WHERE slug = ?', [slug]);
-          if (existing.length > 0 && existing[0].values.length > 0) {
-            imported.push({ filename, title, slug, skipped: true });
-            continue;
-          }
+        // Skip if post with this slug already exists (idempotent re-import)
+        const existing = await db.exec('SELECT id FROM posts WHERE slug = ?', [slug]);
+        if (existing.length > 0 && existing[0].values.length > 0) {
+          result.imported.push({ filename, title, slug, skipped: true });
+          continue;
+        }
 
-          await insertPostWithTags(tx, {
+        // Per-file transaction: a failure rolls back only this file's inserts,
+        // leaving already-imported files intact (partial success semantics).
+        const postId = await db.transaction(async (tx) => {
+          return insertPostWithTags(tx, {
             title, titleEn, slug, content: convertedContent, excerpt, tags: normalized.tags
           });
-          imported.push({ filename, title, slug });
-        } catch (err) {
-          failed.push({ filename, error: sanitizeImportError(err.message) });
-        }
+        });
+        // Keep the wiki-link map current so later files can resolve links to
+        // articles imported earlier in this same batch.
+        slugToIdMap[slug] = postId;
+        result.imported.push({ filename, title, slug });
+      } catch (err) {
+        result.failed.push({ filename, error: sanitizeImportError(err.message) });
       }
-      return { imported, failed };
-    });
+    }
 
     cache.invalidateAll();
     res.json({
@@ -172,50 +175,51 @@ router.post('/import', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'No files provided' });
     }
 
-    const result = await db.transaction(async (tx) => {
-      const imported = [];
-      const failed = [];
+    const result = { imported: [], failed: [] };
 
-      const slugMapResult = tx.exec("SELECT slug, id FROM posts WHERE slug IS NOT NULL AND slug != ''");
-      const slugToIdMap = {};
-      for (const row of slugMapResult[0]?.values || []) {
-        slugToIdMap[row[0]] = row[1];
-      }
+    const slugMapResult = await db.exec("SELECT slug, id FROM posts WHERE slug IS NOT NULL AND slug != ''");
+    const slugToIdMap = {};
+    for (const row of slugMapResult[0]?.values || []) {
+      slugToIdMap[row[0]] = row[1];
+    }
 
-      for (const file of files) {
-        try {
-          const { filename, content, frontmatter } = file;
+    for (const file of files) {
+      try {
+        const { filename, content, frontmatter } = file;
 
-          // Client may already have converted syntax; parse frontmatter again
-          const { frontmatter: parsedFrontmatter, content: markdownContent } = parseFrontmatter(content || '');
-          const mergedFrontmatter = { ...parsedFrontmatter, ...frontmatter };
+        // Client may already have converted syntax; parse frontmatter again
+        const { frontmatter: parsedFrontmatter, content: markdownContent } = parseFrontmatter(content || '');
+        const mergedFrontmatter = { ...parsedFrontmatter, ...frontmatter };
 
-          const title = mergedFrontmatter.title || path.basename(filename, config.import.fileExtension || '.md');
-          const titleEn = mergedFrontmatter.title_en || '';
-          const slug = slugFromFilename(filename);
+        const title = mergedFrontmatter.title || path.basename(filename, config.import.fileExtension || '.md');
+        const titleEn = mergedFrontmatter.title_en || '';
+        const slug = slugFromFilename(filename);
 
-          const excerptMatch = markdownContent.match(/^(.+?)(?:\n\n|$)/s);
-          const excerpt = excerptMatch ? excerptMatch[1].substring(0, config.import.excerptMaxLength || 200) : '';
+        const excerptMatch = markdownContent.match(/^(.+?)(?:\n\n|$)/s);
+        const excerpt = excerptMatch ? excerptMatch[1].substring(0, config.import.excerptMaxLength || 200) : '';
 
-          const convertedContent = convertObsidianSyntax(markdownContent, slugToIdMap);
+        const convertedContent = convertObsidianSyntax(markdownContent, slugToIdMap);
 
-          // Skip if post with this slug already exists (idempotent re-import)
-          const existing = tx.exec('SELECT id FROM posts WHERE slug = ?', [slug]);
-          if (existing.length > 0 && existing[0].values.length > 0) {
-            imported.push({ filename, title, slug, skipped: true });
-            continue;
-          }
+        // Skip if post with this slug already exists (idempotent re-import)
+        const existing = await db.exec('SELECT id FROM posts WHERE slug = ?', [slug]);
+        if (existing.length > 0 && existing[0].values.length > 0) {
+          result.imported.push({ filename, title, slug, skipped: true });
+          continue;
+        }
 
-          await insertPostWithTags(tx, {
+        // Per-file transaction: a failure rolls back only this file's inserts,
+        // leaving already-imported files intact (partial success semantics).
+        const postId = await db.transaction(async (tx) => {
+          return insertPostWithTags(tx, {
             title, titleEn, slug, content: convertedContent, excerpt, tags: mergedFrontmatter.tags
           });
-          imported.push({ filename, title, slug });
-        } catch (err) {
-          failed.push({ filename: file.filename, error: sanitizeImportError(err.message) });
-        }
+        });
+        slugToIdMap[slug] = postId;
+        result.imported.push({ filename, title, slug });
+      } catch (err) {
+        result.failed.push({ filename: file.filename, error: sanitizeImportError(err.message) });
       }
-      return { imported, failed };
-    });
+    }
 
     cache.invalidateAll();
     res.json({

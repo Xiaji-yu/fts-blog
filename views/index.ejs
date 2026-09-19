@@ -79,7 +79,7 @@
 <% } else { %>
 <div class="post-grid">
   <% posts.forEach(post => { %>
-  <article class="card" ondblclick="window.location.href='/post/<%= post.id %>'">
+  <article class="card" data-post-href="/post/<%= post.id %>">
     <div class="card-header">
       <div>
         <h3 class="card-title"><%= post.title %></h3>
