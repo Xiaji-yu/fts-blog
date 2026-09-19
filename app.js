@@ -104,6 +104,26 @@ app.use('/vendor/marked', express.static(path.join(__dirname, 'node_modules', 'm
 app.use('/vendor/dompurify', express.static(path.join(__dirname, 'node_modules', 'dompurify', 'dist')));
 app.use('/vendor/hljs', express.static(path.join(__dirname, 'node_modules', 'highlight.js', 'styles')));
 
+// ---------- Asset cache-busting ----------
+// Append the file's mtime as ?v= to CSS/JS URLs so browsers fetch fresh
+// copies after every deploy (git pull changes mtime even for identical
+// content, which is exactly what we want after a redeploy).
+function assetVersion(relPath) {
+  try {
+    return Math.floor(fs.statSync(path.join(__dirname, 'public', relPath)).mtimeMs).toString(36);
+  } catch (err) {
+    return '0';
+  }
+}
+const ASSET_VERSIONS = {
+  css: assetVersion('css/style.css'),
+  js: assetVersion('js/main.js')
+};
+app.use((req, res, next) => {
+  res.locals.assetV = ASSET_VERSIONS;
+  next();
+});
+
 // ---------- Session (persistent secret survives restarts) ----------
 function loadOrCreateSessionSecret() {
   const secretFile = path.join(path.dirname(databasePath()), '.session-secret');
