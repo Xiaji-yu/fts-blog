@@ -14,7 +14,7 @@
     <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);">
       用户: <strong><%= username %></strong>
     </span>
-    <form method="POST" action="/admin/logout" style="display: inline;">
+    <form method="POST" action="/admin/logout" style="display: flex; align-items: center;">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <button type="submit" class="btn btn-outline btn-sm">登出</button>
     </form>
