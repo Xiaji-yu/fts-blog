@@ -9,13 +9,11 @@
 
 <div class="nav">
   <a href="/admin" class="nav-brand"><%= config.admin.navBrand %></a>
-  <div>
+  <div class="admin-btn-group">
     <a href="/" class="btn btn-outline btn-sm">← 主页 · HOME</a>
-    &nbsp;&nbsp;
     <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);">
       用户: <strong><%= username %></strong>
     </span>
-    &nbsp;&nbsp;
     <form method="POST" action="/admin/logout" style="display: inline;">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <button type="submit" class="btn btn-outline btn-sm">登出</button>
@@ -89,7 +87,7 @@
               </label>
             </div>
 
-            <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
+            <div class="admin-btn-group" style="margin-top: var(--spacing-md);">
               <button type="button" class="btn btn-outline" onclick="previewPost()">
                 <%= config.admin.editor.buttons.preview %>
               </button>
@@ -98,7 +96,7 @@
                 <%= post ? config.admin.editor.buttons.update : config.admin.editor.buttons.create %>
               </button>
               <a href="/admin" class="btn btn-outline"><%= config.admin.editor.buttons.cancel %></a>
-              <a href="/admin/import" class="btn btn-outline" style="font-size: 0.75rem;">📥 导入Obsidian</a>
+              <a href="/admin/import" class="btn btn-outline">📥 导入</a>
             </div>
           </form>
         </div>
@@ -117,7 +115,7 @@
       <h3>图片库 · Image Library</h3>
       <button class="modal-close" onclick="closeImageLibrary()">&times;</button>
     </div>
-    <div style="padding: var(--spacing-sm) 0; display: flex; gap: var(--spacing-sm); align-items: center; flex-wrap: wrap;">
+    <div class="admin-btn-group" style="padding: var(--spacing-sm) 0;">
       <input type="file" id="image-upload-input" accept="image/*" style="display: none;">
       <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('image-upload-input').click()">⬆ 上传图片 · UPLOAD</button>
       <span id="image-upload-status" style="font-size: 0.8rem; color: var(--muted);"></span>

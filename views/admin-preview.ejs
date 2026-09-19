@@ -9,13 +9,11 @@
 
 <div class="nav">
   <a href="/admin" class="nav-brand"><%= config.admin.navBrand %></a>
-  <div>
+  <div class="admin-btn-group">
     <a href="/" class="btn btn-outline btn-sm">← 主页 · HOME</a>
-    &nbsp;&nbsp;
     <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);">
       用户: <strong><%= username %></strong>
     </span>
-    &nbsp;&nbsp;
     <a href="/admin" class="btn btn-outline btn-sm">← 返回编辑</a>
     <button type="button" class="btn btn-outline btn-sm" onclick="window.location.reload()">刷新 · REFRESH</button>
   </div>

@@ -9,20 +9,16 @@
 
 <div class="nav">
   <a href="/admin" class="nav-brand"><%= config.admin.navBrand %></a>
-  <div>
+  <div class="admin-btn-group">
     <a href="/" class="btn btn-outline btn-sm">← 主页 · HOME</a>
-    &nbsp;&nbsp;
     <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);">
       用户: <strong><%= username %></strong>
     </span>
-    &nbsp;&nbsp;
     <form method="POST" action="/admin/logout" style="display: inline;">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <button type="submit" class="btn btn-outline btn-sm">登出</button>
     </form>
-    &nbsp;&nbsp;
     <a href="/api" class="btn btn-outline btn-sm">API 文档</a>
-    &nbsp;&nbsp;
     <button class="btn btn-outline btn-sm" onclick="showPasswordModal()">🔑 修改密码</button>
   </div>
 </div>
@@ -38,9 +34,8 @@
   <p><span class="label">系统</span> <strong><%= config.admin.systemLabel %></strong> · 文章总数 <strong><%= posts.length %></strong></p>
 </div>
 
-<div style="text-align: center; margin: var(--spacing-md) 0;">
+<div class="admin-btn-group admin-btn-group--center" style="margin: var(--spacing-md) 0;">
   <a href="/admin/new" class="btn"><%= config.admin.newPostLabel %></a>
-  &nbsp;&nbsp;
   <a href="/admin/import" class="btn btn-outline"><%= config.admin.importLabel %></a>
 </div>
 
@@ -76,8 +71,10 @@
       </td>
       <td><%= new Date(post.created_at).toLocaleDateString('zh-CN') %></td>
       <td>
-        <a href="/admin/edit/<%= post.id %>" class="btn btn-outline btn-sm">编辑</a>
-        <button type="button" class="btn btn-danger btn-sm" data-delete-id="<%= post.id %>" data-delete-title="<%= post.title.replace(/"/g, '&quot;') %>">删除</button>
+        <div class="admin-actions">
+          <a href="/admin/edit/<%= post.id %>" class="btn btn-outline btn-sm">编辑</a>
+          <button type="button" class="btn btn-danger btn-sm" data-delete-id="<%= post.id %>" data-delete-title="<%= post.title.replace(/"/g, '&quot;') %>">删除</button>
+        </div>
       </td>
     </tr>
     <% }) %>
@@ -107,7 +104,7 @@
         <input type="password" id="confirm-password" class="form-input" required minlength="6" autocomplete="new-password">
       </div>
       <div id="password-error" style="color: #e74c3c; margin-bottom: 0.5rem; display: none;"></div>
-      <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+      <div class="admin-btn-group admin-btn-group--end">
         <button type="button" class="btn btn-outline" onclick="closePasswordModal()">取消 · Cancel</button>
         <button type="submit" class="btn">确认修改 · CONFIRM</button>
       </div>

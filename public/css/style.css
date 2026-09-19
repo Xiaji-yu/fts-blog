@@ -527,6 +527,29 @@ body::after {
   font-size: 0.75rem;
 }
 
+/* ── Admin button groups ── */
+.admin-btn-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.admin-btn-group--center {
+  justify-content: center;
+}
+
+.admin-btn-group--end {
+  justify-content: flex-end;
+}
+
+/* Table action cells: buttons in a row, aligned left */
+.admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 /* ── Forms ── */
 .form-group {
   margin-bottom: var(--spacing-md);

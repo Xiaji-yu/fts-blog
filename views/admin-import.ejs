@@ -9,13 +9,11 @@
 
 <div class="nav">
   <a href="/admin" class="nav-brand"><%= config.admin.navBrand %></a>
-  <div>
+  <div class="admin-btn-group">
     <a href="/" class="btn btn-outline btn-sm">← 主页 · HOME</a>
-    &nbsp;&nbsp;
     <span style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--muted);">
       用户: <strong><%= username %></strong>
     </span>
-    &nbsp;&nbsp;
     <form method="POST" action="/admin/logout" style="display: inline;">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <button type="submit" class="btn btn-outline btn-sm">登出</button>
@@ -58,9 +56,11 @@
     <p style="color: var(--fg-dim); margin-bottom: var(--spacing-sm);">
       从 <strong><%= config.import.obsidianDirLabel %></strong> 目录批量导入所有 .md 文件（跳过已导入的）
     </p>
-    <button id="scanBtn" class="btn btn-outline">
-      扫描经验目录 · SCAN & IMPORT
-    </button>
+    <div class="admin-btn-group admin-btn-group--center">
+      <button id="scanBtn" class="btn btn-outline">
+        扫描经验目录 · SCAN & IMPORT
+      </button>
+    </div>
   </div>
 
   <div class="upload-zone" id="dropZone">
