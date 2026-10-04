@@ -262,6 +262,38 @@ test('login then CSRF-protected post creation works end to end', async () => {
   assert.equal(logoutRes.status, 200);
 });
 
+test('messy slugs are normalized before save, never rejected for characters', async () => {
+  const loginRes = await request('POST', '/api/auth/login', { json: { username: ADMIN_USER, password: ADMIN_PASS } });
+  assert.equal(loginRes.status, 200);
+  const { csrfToken } = await loginRes.json();
+
+  // Create with a messy slug — must be normalized, not rejected.
+  const createRes = await request('POST', '/api/posts', {
+    json: { title: '归一化测试', slug: '  My Post!! 测试  ', content: 'x', published: true },
+    headers: { 'X-CSRF-Token': csrfToken }
+  });
+  assert.equal(createRes.status, 201, 'create with messy slug succeeds, got: ' + createRes.status);
+  const { id } = await createRes.json();
+
+  // Stored slug is the normalized one (CJK chars are kept, junk becomes '-').
+  const detail = await request('GET', '/api/posts/id/' + id, { headers: { 'X-CSRF-Token': csrfToken } });
+  const data = await detail.json();
+  assert.equal(data.slug, 'my-post-测试');
+  assert.equal((await request('GET', '/api/posts/' + encodeURIComponent('my-post-测试'))).status, 200);
+
+  // Editing with an untouched normalized slug keeps working.
+  const putRes = await request('PUT', '/api/posts/' + id, {
+    json: { title: '归一化测试 v2', slug: 'my-post-测试', content: 'x', published: true },
+    headers: { 'X-CSRF-Token': csrfToken }
+  });
+  assert.equal(putRes.status, 200);
+
+  const delRes = await request('DELETE', '/api/posts/' + id, { headers: { 'X-CSRF-Token': csrfToken } });
+  assert.equal(delRes.status, 200);
+
+  await request('POST', '/api/auth/logout', { headers: { 'X-CSRF-Token': csrfToken } });
+});
+
 test('login rate limiter rejects rapid attempts', async () => {
   // Exhaust the per-window budget, then verify a 429.
   let lastStatus = 0;

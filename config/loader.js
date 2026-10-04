@@ -70,7 +70,7 @@ const defaults = {
         title: "标题 · Title (中文)",
         titleEn: "英文标题 · Title (EN)",
         slug: "URL标识 · Slug",
-        slugHint: "小写字母、数字、连字符和中文 · Lowercase letters, numbers, hyphens and CJK",
+        slugHint: "小写字母、数字、连字符和中文；其他字符自动转换为连字符 · Other characters are normalized to hyphens",
         excerpt: "摘要 · Excerpt",
         content: "内容 · Content (Markdown)",
         tags: "标签 · Tags (逗号分隔)",

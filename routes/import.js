@@ -8,6 +8,7 @@ const db = require('../database/db');
 const { requireAuth, requireAuthView } = require('../middleware/auth');
 const { csrfProtect } = require('../middleware/csrf');
 const cache = require('../lib/cache');
+const { slugify } = require('../lib/slug');
 const { normalizeYamlValue, parseFrontmatter, convertObsidianSyntax } = require('../lib/obsidian');
 
 const OBSIDIAN_DIR = path.join(__dirname, '..', config.import.obsidianDir || '经验');
@@ -26,13 +27,10 @@ router.get('/import', requireAuthView, (req, res) => {
   });
 });
 
-// Generate a URL-safe slug from a filename (keeps CJK characters)
+// Generate a slug from a filename (keeps CJK characters) using the shared
+// slug rules — the same ones the admin API validates against on edit.
 function slugFromFilename(filename) {
-  const base = path.basename(filename, config.import.fileExtension || '.md');
-  return base
-    .toLowerCase()
-    .replace(/[^a-z0-9一-龥]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  return slugify(path.basename(filename, config.import.fileExtension || '.md'));
 }
 
 async function insertPostWithTags(tx, { title, titleEn, slug, content, excerpt, tags }) {

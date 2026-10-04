@@ -69,14 +69,10 @@ function verifyImageFile(filePath) {
   }
 }
 
-// Simple input validation helpers
-// CJK characters are allowed so posts imported from CJK-titled Obsidian
-// files keep their original, human-readable slugs (see routes/import.js).
-const SLUG_PATTERN = /^[a-z0-9一-龥-]+$/;
-
-function slugifySlug(value) {
-  return String(value || '').toLowerCase().replace(/[^a-z0-9一-龥-]+/g, '-').replace(/^-+|-+$/g, '');
-}
+// Slug rules shared with the importer (lib/slug.js) so generated slugs
+// always pass validation. Slugs are normalized BEFORE validation below,
+// so an untouched imported slug can never be rejected for its characters.
+const { SLUG_PATTERN, slugify } = require('../lib/slug');
 
 function validatePostInput({ title, slug, content }) {
   if (!title || !String(title).trim()) return '标题不能为空 · Title is required';
@@ -264,14 +260,17 @@ router.post('/posts', requireAuth, async (req, res) => {
   try {
     const { title, title_en, slug, content, excerpt, published, tags } = req.body;
 
-    const validationError = validatePostInput({ title, slug, content });
+    // Normalize first: any character outside the slug alphabet becomes '-',
+    // so the format check below can only fail on an effectively-empty slug.
+    const normalizedSlug = slugify(slug);
+    const validationError = validatePostInput({ title, slug: normalizedSlug, content });
     if (validationError) return res.status(400).json({ error: validationError });
 
     const now = new Date().toISOString();
     const postId = await db.transaction(async (tx) => {
       tx.run(
         'INSERT INTO posts (title, title_en, slug, content, excerpt, published, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [title, title_en || null, slugifySlug(slug), content, excerpt || null, normalizePublished(published), now, now]
+        [title, title_en || null, normalizedSlug, content, excerpt || null, normalizePublished(published), now, now]
       );
       const id = tx.lastInsertRowid();
       await insertTags(tx, id, normalizeTags(tags));
@@ -317,7 +316,10 @@ router.put('/posts/:id', requireAuth, async (req, res) => {
 
     const { title, title_en, slug, content, excerpt, published, tags } = req.body;
 
-    const validationError = validatePostInput({ title, slug, content });
+    // Normalize first so an untouched (possibly legacy) slug is never
+    // rejected for its characters — see lib/slug.js.
+    const normalizedSlug = slugify(slug);
+    const validationError = validatePostInput({ title, slug: normalizedSlug, content });
     if (validationError) return res.status(400).json({ error: validationError });
 
     const existing = await db.exec('SELECT id FROM posts WHERE id = ?', [postId]);
@@ -331,7 +333,7 @@ router.put('/posts/:id', requireAuth, async (req, res) => {
     await db.transaction(async (tx) => {
       tx.run(
         'UPDATE posts SET title = ?, title_en = ?, slug = ?, content = ?, excerpt = ?, published = ?, updated_at = ? WHERE id = ?',
-        [title, title_en || null, slugifySlug(slug), content, excerpt || null, publishedVal, now, postId]
+        [title, title_en || null, normalizedSlug, content, excerpt || null, publishedVal, now, postId]
       );
       tx.run('DELETE FROM post_tags WHERE post_id = ?', [postId]);
       await insertTags(tx, postId, normalizeTags(tags));

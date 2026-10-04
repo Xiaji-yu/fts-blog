@@ -59,7 +59,7 @@
 
             <div class="form-group">
               <label class="form-label" for="slug"><%= config.admin.editor.labels.slug %></label>
-              <input type="text" id="slug" name="slug" class="form-input" value="<%= post ? post.slug : '' %>" required pattern="[a-z0-9一-龥-]+" title="小写字母、数字、连字符和中文 · Lowercase letters, numbers, hyphens and CJK">
+              <input type="text" id="slug" name="slug" class="form-input" value="<%= post ? post.slug : '' %>" required pattern="[a-z0-9一-龥\-]+" title="小写字母、数字、连字符和中文 · Lowercase letters, numbers, hyphens and CJK">
               <small style="color: var(--muted); font-size: 0.8rem; margin-top: 0.25rem; display: block;">
                 <%= config.admin.editor.labels.slugHint %>
               </small>
@@ -134,6 +134,19 @@ function getCsrf() {
   return meta ? meta.content : '';
 }
 
+// Same slug rules as lib/slug.js on the server: normalize the field on blur
+// and before submit so what you see is exactly what gets saved, and an
+// untouched imported slug is never rejected for its characters.
+function slugifyLocal(value) {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9一-龥]+/g, '-').replace(/^-+|-+$/g, '');
+}
+const slugInput = document.getElementById('slug');
+if (slugInput) {
+  slugInput.addEventListener('blur', function () {
+    slugInput.value = slugifyLocal(slugInput.value);
+  });
+}
+
 // ---------- Save (create / update) ----------
 document.getElementById('post-form').addEventListener('submit', async function(e) {
   e.preventDefault();
@@ -151,6 +164,8 @@ document.getElementById('post-form').addEventListener('submit', async function(e
       data[key] = value;
     } else if (key === 'published') {
       data[key] = true;
+    } else if (key === 'slug') {
+      data[key] = slugifyLocal(value);
     } else {
       data[key] = value;
     }
