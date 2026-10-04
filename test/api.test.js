@@ -107,6 +107,35 @@ test('public endpoints respond', async () => {
   assert.match(searchText, /SQLite/);
 });
 
+test('og:url and RSS links derive from the request host, not hardcoded localhost', async () => {
+  const postRes = await request('GET', '/post/1');
+  assert.equal(postRes.status, 200);
+  const html = await postRes.text();
+  assert.ok(
+    html.includes(`<meta property="og:url" content="${baseUrl}/post/1">`),
+    'og:url uses the request origin, got: ' + (html.match(/<meta property="og:url" content="([^"]+)"/) || [])[1]
+  );
+  assert.ok(!html.includes('localhost:3000'), 'no hardcoded localhost base URL leaks into the page');
+
+  const feed = await request('GET', '/feed.xml');
+  assert.equal(feed.status, 200);
+  const feedText = await feed.text();
+  assert.ok(feedText.includes(`<link>${baseUrl}/post/`), 'RSS item links use the request origin');
+  assert.ok(feedText.includes(`<atom:link href="${baseUrl}/feed.xml"`), 'RSS self link uses the request origin');
+});
+
+test('explicit config.site.url overrides the request-derived base URL', async () => {
+  const configLoader = require('../config/loader');
+  configLoader.site.url = 'https://blog.example.com';
+  try {
+    const feed = await request('GET', '/feed.xml');
+    const feedText = await feed.text();
+    assert.ok(feedText.includes('<link>https://blog.example.com</link>'), 'configured site.url wins over request host');
+  } finally {
+    configLoader.site.url = null;
+  }
+});
+
 test('homepage shows nav, status panel, hot strip and post grid', async () => {
   const res = await request('GET', '/');
   assert.equal(res.status, 200);

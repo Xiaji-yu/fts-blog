@@ -181,6 +181,31 @@ app.use((req, res, next) => {
   next();
 });
 
+// ---------- Per-request site base URL (og:url / RSS / canonical links) ----------
+// config.site.url wins when explicitly set. Otherwise the base URL is derived
+// from the incoming request — honoring X-Forwarded-Host / X-Forwarded-Proto
+// when trust proxy is enabled — so deployed pages never advertise
+// http://localhost:3000 in share cards or RSS feeds.
+app.use((req, res, next) => {
+  if (config.site.url) {
+    res.locals.baseUrl = String(config.site.url).replace(/\/+$/, '');
+    return next();
+  }
+  // Mirror Express's req.hostname proxy handling (X-Forwarded-Host is only
+  // honored for trusted proxy hops) but keep any nonstandard port.
+  const trust = req.app.get('trust proxy fn');
+  let host = req.get('X-Forwarded-Host');
+  if (!host || !trust(req.connection.remoteAddress, 0)) {
+    host = req.get('Host');
+  } else if (host.indexOf(',') !== -1) {
+    host = host.substring(0, host.indexOf(',')).trimRight();
+  }
+  res.locals.baseUrl = host
+    ? `${req.protocol}://${host}`
+    : String(config.server.publicUrl || 'http://localhost:3000').replace(/\/+$/, '');
+  next();
+});
+
 // ---------- View engine ----------
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));

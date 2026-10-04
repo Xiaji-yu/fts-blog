@@ -15,7 +15,7 @@
 <hr class="divider">
 
 <div class="spec-block">
-  <p><span class="label">接口</span> <strong><%= config.api.systemLabel %></strong> · 基础URL <strong><%= config.api.baseUrl %></strong></p>
+  <p><span class="label">接口</span> <strong><%= config.api.systemLabel %></strong> · 基础URL <strong><%= baseUrl %>/api</strong></p>
 </div>
 
 <div class="description" style="text-align: left; max-width: 800px;">
@@ -125,15 +125,15 @@
 
   <div class="spec-block" style="text-align: left; background: var(--bg-alt); padding: var(--spacing-md); border: 1px solid var(--border);">
     <p style="margin-bottom: 0.5rem;"># 1. 获取所有文章（公开）</p>
-    <p>curl <%= config.api.baseUrl.replace(/\/api$/, '') %>/api/posts</p>
+    <p>curl <%= baseUrl %>/api/posts</p>
     <br>
     <p style="margin-bottom: 0.5rem;"># 2. 登录并保存 Cookie 与 CSRF 令牌</p>
-    <p>curl -c cookies.txt -X POST <%= config.api.baseUrl %>/auth/login \<br>
+    <p>curl -c cookies.txt -X POST <%= baseUrl %>/api/auth/login \<br>
     &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
     &nbsp;&nbsp;-d '{"username":"<%= config.admin.defaultUsername %>","password":"YOUR_PASSWORD"}'</p>
     <br>
     <p style="margin-bottom: 0.5rem;"># 3. 创建新文章（携带 Cookie + CSRF 头）</p>
-    <p>curl -b cookies.txt -X POST <%= config.api.baseUrl %>/posts \<br>
+    <p>curl -b cookies.txt -X POST <%= baseUrl %>/api/posts \<br>
     &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
     &nbsp;&nbsp;-H "X-CSRF-Token: &lt;上一步响应中的 csrfToken&gt;" \<br>
     &nbsp;&nbsp;-d '{"title":"测试","slug":"test","content":"内容"}'</p>

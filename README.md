@@ -75,7 +75,7 @@ cp config.example.json config.json
 
 | 段 | 用途 |
 |---|---|
-| `site` | 站点名称、描述、图号前缀、阅读速度、`url`（RSS/OG 使用的规范站点地址） |
+| `site` | 站点名称、描述、图号前缀、阅读速度、`url`（RSS/OG 使用的规范站点地址；不设置时按请求的域名/协议自动推导，无需手工替换 localhost） |
 | `author` | 署名、项目名、版本号 |
 | `blueprint` | 蓝图前缀、所有 UI 标签文本 |
 | `admin` | 管理后台标题、按钮文案、表单标签 |

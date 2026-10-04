@@ -6,7 +6,8 @@ const db = require('../database/db');
 const cache = require('../lib/cache');
 const viewCounter = require('../lib/viewCounter');
 
-const BASE_URL = (config.site.url || config.server.publicUrl || 'http://localhost:3000').replace(/\/+$/, '');
+// Absolute site base URL is computed per request (res.locals.baseUrl, set in
+// app.js) so feed links follow the host the feed was fetched from.
 
 const POST_SELECT = `p.*, GROUP_CONCAT(t.name) as tags`;
 
@@ -373,6 +374,7 @@ router.get('/random', async (req, res) => {
 // GET /feed.xml - RSS 2.0 feed
 router.get('/feed.xml', async (req, res) => {
   try {
+    const BASE_URL = res.locals.baseUrl;
     const posts = await fetchPublishedPosts({ limit: 20 });
     const items = posts.map((post) => {
       const description = (post.excerpt || (post.title + ' — ' + (post.title_en || ''))).slice(0, 500);
