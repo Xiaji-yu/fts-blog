@@ -14,6 +14,16 @@
 
   var docEl = document.documentElement;
 
+  /* Arm the [data-reveal] system before the entrance starts: elements opt in
+     via the attribute, and html.js-anim is what actually hides them, so
+     no-JS / reduced-motion visitors never see a hidden page. Counters are
+     primed to 0 here too — the splash or a page loader still covers them. */
+  if (!reducedMotion) {
+    docEl.classList.add('js-anim');
+    var primedCounters = document.querySelectorAll('[data-countup]');
+    for (var pi = 0; pi < primedCounters.length; pi++) primedCounters[pi].textContent = '0';
+  }
+
   var _timers = [];
 
   function scrollTop() {
@@ -333,9 +343,17 @@
   });
   var splash = document.getElementById('pageSplash');
   if (!splash) {
-    // no splash on this page
+    // No splash on this page. Pages with a page-level loader (tags / search /
+    // 404 / admin / api) keep the viewport covered for ~800ms — their loader
+    // calls startEntrance() when it clears, so the entrance is not hidden.
+    var pageLoader = document.querySelector(
+      '.error-loader.active, .tags-loader.active, .admin-loader.active,' +
+      ' .api-loader.active, .search-page-loader.active, .drawing-loader.active'
+    );
+    if (!pageLoader) startEntrance();
   } else if (reducedMotion) {
     splash.classList.add('done');
+    startEntrance();
   } else {
     var bar = document.getElementById('splashBar');
     var percentEl = document.getElementById('splashPercent');
@@ -381,6 +399,7 @@
             splash.classList.add('done');
             document.body.classList.remove('page-splash-active');
             document.body.classList.add('loaded');
+            startEntrance();
             setTimeout(function () {
               if (splash.parentNode) splash.parentNode.removeChild(splash);
             }, 650);
@@ -482,6 +501,7 @@
       if (removed) return;
       removed = true;
       el.classList.remove('active');
+      startEntrance();
       setTimeout(function () {
         if (el.parentNode) el.parentNode.removeChild(el);
       }, 400);
@@ -500,5 +520,230 @@
         setTimeout(removeLoader, LOADER_FORCE_TIMEOUT);
       }
     }, 800);
+  });
+
+  /* ═══ Motion & interaction enhancements ═══
+     The entrance sequence (reveal + counters + cursor glow) starts once the
+     page-level overlay has cleared — see the calls to startEntrance() above.
+     The helpers below are also safe to call directly. */
+
+  var entranceStarted = false;
+  function startEntrance() {
+    if (entranceStarted) return;
+    entranceStarted = true;
+    initReveal();
+    initCounters();
+    initCursorGlow();
+  }
+
+  /* Safety net: if some edge case never calls startEntrance() explicitly
+     (unexpected overlay, script order change), start anyway. Idempotent. */
+  setTimeout(startEntrance, 1800);
+
+  /* [data-reveal] elements fade in once they intersect the viewport. */
+  function initReveal() {
+    var els = document.querySelectorAll('[data-reveal]');
+    if (!els.length) return;
+    if (!('IntersectionObserver' in window)) {
+      els.forEach(function (el) { el.classList.add('is-in'); });
+      return;
+    }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    els.forEach(function (el) { io.observe(el); });
+  }
+
+  /* [data-countup] numbers roll from 0 to their server-rendered value. */
+  function initCounters() {
+    var els = document.querySelectorAll('[data-countup]');
+    if (!els.length) return;
+    var fmt = new Intl.NumberFormat('en-US');
+
+    function run(el) {
+      var target = parseInt(el.getAttribute('data-countup'), 10);
+      if (isNaN(target)) return;
+      if (reducedMotion) { el.textContent = fmt.format(target); return; }
+      var duration = 900;
+      var start = null;
+      function tick(now) {
+        if (!start) start = now;
+        var t = Math.min(1, (now - start) / duration);
+        var eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = fmt.format(Math.round(target * eased));
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    if (!('IntersectionObserver' in window)) { els.forEach(run); return; }
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) { run(entry.target); io.unobserve(entry.target); }
+      });
+    }, { threshold: 0.4 });
+    els.forEach(function (el) { io.observe(el); });
+  }
+
+  /* A faint blueprint spotlight that trails the pointer (fine pointers only). */
+  function initCursorGlow() {
+    var glow = document.getElementById('cursorGlow');
+    if (!glow || reducedMotion) return;
+    if (!window.matchMedia || !window.matchMedia('(pointer: fine)').matches) return;
+
+    var gx = -999, gy = -999, tx = -999, ty = -999;
+    var raf = 0, seen = false;
+
+    function update() {
+      raf = 0;
+      gx += (tx - gx) * 0.18;
+      gy += (ty - gy) * 0.18;
+      glow.style.transform =
+        'translate3d(' + (gx - 260).toFixed(1) + 'px,' + (gy - 260).toFixed(1) + 'px,0)';
+      if (Math.abs(tx - gx) > 0.5 || Math.abs(ty - gy) > 0.5) {
+        raf = requestAnimationFrame(update);
+      }
+    }
+
+    window.addEventListener('mousemove', function (e) {
+      tx = e.clientX;
+      ty = e.clientY;
+      if (!seen) {
+        seen = true;
+        gx = tx;
+        gy = ty;
+        docEl.classList.add('glow-on');
+      }
+      if (!raf) raf = requestAnimationFrame(update);
+    }, { passive: true });
+  }
+
+  /* ── Code copy buttons (article code blocks) ── */
+  (function initCodeCopy() {
+    var blocks = document.querySelectorAll('.description pre');
+    if (!blocks.length) return;
+
+    function legacyCopy(text) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      return ok;
+    }
+
+    blocks.forEach(function (pre) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'code-copy';
+      btn.textContent = 'COPY';
+      btn.setAttribute('aria-label', '复制代码 · COPY CODE');
+
+      btn.addEventListener('click', function () {
+        var code = pre.querySelector('code') || pre;
+        var text = code.innerText;
+        var done = function (ok) {
+          btn.textContent = ok ? '✓ COPIED' : '✗ FAILED';
+          btn.classList.toggle('copied', !!ok);
+          setTimeout(function () {
+            btn.textContent = 'COPY';
+            btn.classList.remove('copied');
+          }, 1400);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(
+            function () { done(true); },
+            function () { done(legacyCopy(text)); }
+          );
+        } else {
+          done(legacyCopy(text));
+        }
+      });
+
+      pre.appendChild(btn);
+    });
+  })();
+
+  /* ── Lightbox for article images ── */
+  (function initLightbox() {
+    var imgs = document.querySelectorAll('.post-body img');
+    if (!imgs.length) return;
+    var box = null;
+
+    function onKey(e) {
+      if (e.key === 'Escape') close();
+    }
+
+    function close() {
+      if (!box || !box.classList.contains('open')) return;
+      box.classList.remove('open');
+      document.body.classList.remove('lightbox-open');
+      document.removeEventListener('keydown', onKey);
+      setTimeout(function () {
+        if (box && !box.classList.contains('open')) box.setAttribute('hidden', '');
+      }, 320);
+    }
+
+    function open(src, alt) {
+      if (!box) {
+        box = document.createElement('div');
+        box.className = 'lightbox';
+        box.setAttribute('role', 'dialog');
+        box.setAttribute('aria-label', '图片预览 · IMAGE PREVIEW');
+        box.setAttribute('hidden', '');
+
+        var big = document.createElement('img');
+        big.alt = '';
+        box.appendChild(big);
+
+        var hint = document.createElement('div');
+        hint.className = 'lightbox-hint';
+        hint.textContent = 'CLICK / ESC TO CLOSE';
+        box.appendChild(hint);
+
+        box.addEventListener('click', close);
+        document.body.appendChild(box);
+      }
+      var big = box.querySelector('img');
+      big.src = src;
+      big.alt = alt || '';
+      box.removeAttribute('hidden');
+      void box.offsetWidth; // restart the transition after a quick re-open
+      box.classList.add('open');
+      document.body.classList.add('lightbox-open');
+      document.addEventListener('keydown', onKey);
+    }
+
+    imgs.forEach(function (img) {
+      img.addEventListener('click', function () {
+        open(img.getAttribute('data-full') || img.currentSrc || img.src, img.alt);
+      });
+    });
+  })();
+
+  /* ── Keyboard shortcuts: / focuses search, t scrolls back to top ── */
+  document.addEventListener('keydown', function (e) {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    if (e.key === '/') {
+      var input = document.querySelector('input[type="search"]');
+      if (input) {
+        e.preventDefault();
+        input.focus();
+      }
+    } else if (e.key === 't' || e.key === 'T') {
+      window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
+    }
   });
 })();

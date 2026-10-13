@@ -155,7 +155,10 @@
     var navRect = nav.getBoundingClientRect();
     var linkRect = activeItem.link.getBoundingClientRect();
     var top = Math.max(0, linkRect.top - navRect.top + linkRect.height * 0.5);
-    progress.style.height = top + 'px';
+    // The indicator is 1.1rem tall (centre at 8.8px): translate so its centre
+    // sits on the active link's centre. transform eases between items.
+    progress.style.transform = 'translateY(' + (top - 9) + 'px)';
+    progress.classList.add('visible');
   }
 
   var observer = new IntersectionObserver(function (entries) {

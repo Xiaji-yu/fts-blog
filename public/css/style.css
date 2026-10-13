@@ -723,18 +723,26 @@ body::after {
   position: relative;
 }
 
-/* Vertical progress track (accent fills to the active section) */
+/* Active-section indicator: a short bar that glides along the rail.
+   Driven by transform (see post.ejs) so it eases smoothly between items
+   instead of the old animated-height jump. */
 .toc-progress {
   position: absolute;
   left: -0.55rem;
-  top: 0.35rem;
+  top: 0;
   width: 2px;
+  height: 1.1rem;
   background: var(--accent);
   box-shadow: 0 0 6px var(--accent-glow);
   border-radius: 1px;
-  transition: height 0.25s ease;
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
   z-index: 1;
-  height: 0;
+  will-change: transform;
+}
+
+.toc-progress.visible {
+  opacity: 1;
 }
 
 .toc-link {
@@ -2055,12 +2063,10 @@ body.loaded .description {
 body.loaded .hot-section { animation-delay: 0.26s; }
 body.loaded .description { animation-delay: 0.3s; }
 
-body.loaded .post-grid {
-  opacity: 0;
-  animation: splashReveal 0.55s ease forwards;
-}
-
-body.loaded .post-grid { animation-delay: 0.34s; }
+/* The post grid no longer reveals as one block: each card opts into the
+   generic [data-reveal] system (see "Motion & interaction enhancements"),
+   so the first screen staggers card-by-card and cards below the fold
+   animate when scrolled into view. */
 
 @keyframes splashReveal {
   from {
@@ -2848,4 +2854,215 @@ body.loaded .post-grid { animation-delay: 0.34s; }
 .footer-block .field:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════
+   Motion & interaction enhancements
+   ═══════════════════════════════════════════ */
+
+/* ── Cross-document view transitions ──
+   Chrome / Safari honour @view-transition and cross-fade between pages;
+   every other browser ignores the block entirely. */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: vt-leave 0.28s ease both;
+}
+
+::view-transition-new(root) {
+  animation: vt-enter 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes vt-leave {
+  to { opacity: 0; transform: translateY(-10px); }
+}
+
+@keyframes vt-enter {
+  from { opacity: 0; transform: translateY(14px); }
+}
+
+/* ── Scroll reveal ──
+   Elements opt in with [data-reveal]; main.js adds .is-in on intersection.
+   html.js-anim is only set when JS runs and motion is allowed, so no-JS and
+   reduced-motion visitors see the page statically. Stagger via --reveal-delay. */
+html.js-anim [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+html.js-anim [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Card hover: blueprint trace ──
+   The four edges draw themselves around the card, clockwise, like a pen
+   finishing the outline. One pseudo-element drives all edges via
+   background-size (which is transitionable). Inset by 2px because .card
+   clips its overflow (and to keep the trace clear of the dashed border). */
+.card::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--accent), var(--accent)) no-repeat 0 0 / 0% 1.5px,
+    linear-gradient(var(--accent), var(--accent)) no-repeat 100% 0 / 1.5px 0%,
+    linear-gradient(var(--accent), var(--accent)) no-repeat 100% 100% / 0% 1.5px,
+    linear-gradient(var(--accent), var(--accent)) no-repeat 0 100% / 1.5px 0%;
+  opacity: 0.75;
+  transition: background-size 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card:hover::after {
+  background-size: 100% 1.5px, 1.5px 100%, 100% 1.5px, 1.5px 100%;
+}
+
+/* ── Cursor glow ──
+   A faint blueprint spotlight that trails the pointer. JS-gated to fine
+   pointers, and disabled under reduced motion. */
+.cursor-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(100, 200, 255, 0.06), transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transform: translate3d(-999px, -999px, 0);
+  transition: opacity 0.6s ease;
+  will-change: transform;
+}
+
+html.glow-on .cursor-glow {
+  opacity: 1;
+}
+
+/* ── Code copy button (injected by main.js) ── */
+.description pre {
+  position: relative;
+}
+
+.code-copy {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--border-strong);
+  background: rgba(10, 25, 41, 0.92);
+  color: var(--fg-dim);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.description pre:hover .code-copy,
+.code-copy:focus-visible {
+  opacity: 1;
+}
+
+.code-copy:hover {
+  color: var(--fg);
+  border-color: var(--fg-dim);
+}
+
+.code-copy.copied {
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+/* Touch devices have no hover: keep the button visible. */
+@media (hover: none) {
+  .code-copy {
+    opacity: 1;
+  }
+}
+
+/* ── Image lightbox (article images) ── */
+.post-body img {
+  cursor: zoom-in;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 12, 22, 0.93);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  cursor: zoom-out;
+}
+
+.lightbox[hidden] {
+  display: none;
+}
+
+.lightbox.open {
+  opacity: 1;
+}
+
+.lightbox img {
+  max-width: 92vw;
+  max-height: 86vh;
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 0 60px rgba(100, 200, 255, 0.15);
+  transform: scale(0.96);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lightbox.open img {
+  transform: scale(1);
+}
+
+.lightbox-hint {
+  position: absolute;
+  bottom: 1.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+body.lightbox-open {
+  overflow: hidden;
+}
+
+/* ── Reduced motion: keep everything static ── */
+@media (prefers-reduced-motion: reduce) {
+  html.js-anim [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .card::after,
+  .lightbox,
+  .lightbox img,
+  .code-copy,
+  .toc-progress {
+    transition: none !important;
+  }
+
+  .cursor-glow {
+    display: none;
+  }
 }

@@ -29,19 +29,19 @@
 <div class="status-panel" aria-label="图纸库统计">
   <div class="status-item">
     <span class="status-label">图纸 · SHEETS</span>
-    <span class="status-value"><%= stats.postCount %></span>
+    <span class="status-value" data-countup="<%= stats.postCount %>"><%= stats.postCount %></span>
   </div>
   <div class="status-item">
     <span class="status-label">标签 · TAGS</span>
-    <span class="status-value"><%= stats.tagCount %></span>
+    <span class="status-value" data-countup="<%= stats.tagCount %>"><%= stats.tagCount %></span>
   </div>
   <div class="status-item">
     <span class="status-label">总浏览 · VIEWS</span>
-    <span class="status-value"><%= new Intl.NumberFormat('en-US').format(stats.viewTotal) %></span>
+    <span class="status-value" data-countup="<%= stats.viewTotal %>"><%= new Intl.NumberFormat('en-US').format(stats.viewTotal) %></span>
   </div>
   <div class="status-item">
     <span class="status-label">总字数 · CHARS</span>
-    <span class="status-value"><%= new Intl.NumberFormat('en-US').format(stats.charTotal) %></span>
+    <span class="status-value" data-countup="<%= stats.charTotal %>"><%= new Intl.NumberFormat('en-US').format(stats.charTotal) %></span>
   </div>
   <div class="status-item">
     <span class="status-label">最后更新 · UPDATED</span>
@@ -78,8 +78,8 @@
 </div>
 <% } else { %>
 <div class="post-grid">
-  <% posts.forEach(post => { %>
-  <article class="card" data-post-href="/post/<%= post.id %>">
+  <% posts.forEach((post, i) => { %>
+  <article class="card" data-post-href="/post/<%= post.id %>" data-reveal style="--reveal-delay: <%= Math.min(i, 6) * 70 %>ms">
     <div class="card-header">
       <div>
         <h3 class="card-title"><%= post.title %></h3>
@@ -113,7 +113,10 @@
 <% } %>
 
 <div class="text-center mt-lg">
-  <a href="/posts" class="btn btn-random">查看更多 · VIEW ALL POSTS →</a>
+  <div style="display: flex; justify-content: center; align-items: center; gap: var(--spacing-sm); flex-wrap: wrap;">
+    <a href="/posts" class="btn btn-random">查看更多 · VIEW ALL POSTS →</a>
+    <a href="/random" class="btn btn-outline">随机一张 · RANDOM ⟳</a>
+  </div>
 </div>
 
 </div>

@@ -24,8 +24,8 @@
 </div>
 <% } else { %>
 <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm); margin-top: var(--spacing-lg); justify-content: center;">
-  <% tags.forEach(tag => { %>
-  <a href="/tag/<%= encodeURIComponent(tag.name) %>" class="tag" style="font-size: 0.95rem; padding: 0.45rem 0.9rem; text-decoration: none;">
+  <% tags.forEach((tag, i) => { %>
+  <a href="/tag/<%= encodeURIComponent(tag.name) %>" class="tag" data-reveal style="font-size: 0.95rem; padding: 0.45rem 0.9rem; text-decoration: none; --reveal-delay: <%= Math.min(i, 12) * 40 %>ms;">
     #<%= tag.name %> <span style="opacity: 0.65; font-family: var(--font-mono);">(<%= tag.post_count %>)</span>
   </a>
   <% }) %>
