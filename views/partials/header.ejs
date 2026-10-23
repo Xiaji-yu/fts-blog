@@ -1,12 +1,32 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="blueprint">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %> — <%= config.site.shortName %></title>
   <meta name="csrf-token" content="<%= csrfToken %>">
+  <meta name="theme-color" id="themeColor" content="#0a1929">
   <link rel="stylesheet" href="/css/style.css?v=<%= assetV.css %>">
-  <link rel="stylesheet" href="/vendor/hljs/github-dark.css">
+  <link rel="stylesheet" href="/vendor/hljs/github-dark.css" id="hljsDark">
+  <link rel="stylesheet" href="/vendor/hljs/github.css" id="hljsLight" disabled>
+  <link rel="stylesheet" href="/css/theme-paper.css?v=<%= assetV.themeCss %>">
+  <%# Apply the saved theme before first paint so switching never flashes. %>
+  <script>
+    (function () {
+      var theme = 'blueprint';
+      try {
+        var saved = localStorage.getItem('fts-theme');
+        if (saved === 'paper' || saved === 'blueprint') theme = saved;
+      } catch (e) {}
+      document.documentElement.setAttribute('data-theme', theme);
+      var color = document.getElementById('themeColor');
+      if (color) color.setAttribute('content', theme === 'paper' ? '#f5f4f1' : '#0a1929');
+      var light = document.getElementById('hljsLight');
+      var dark = document.getElementById('hljsDark');
+      if (light) light.disabled = theme !== 'paper';
+      if (dark) dark.disabled = theme === 'paper';
+    })();
+  </script>
   <link rel="alternate" type="application/rss+xml" title="<%= config.site.name %> · RSS" href="<%= baseUrl %>/feed.xml">
   <meta property="og:title" content="<%= typeof ogTitle !== 'undefined' ? ogTitle : title %>">
   <meta property="og:description" content="<%= typeof ogDescription !== 'undefined' ? ogDescription : config.site.description %>">
@@ -18,7 +38,7 @@
     <%- headExtra %>
   <% } %>
 </head>
-<body>
+<body class="<%= (typeof currentPath !== 'undefined' && currentPath.startsWith('/admin')) ? 'is-admin' : '' %>">
   <div id="cursorGlow" class="cursor-glow" aria-hidden="true"></div>
   <% if (typeof noSplash === 'undefined' || !noSplash) { %>
   <div id="pageSplash" class="page-splash" aria-hidden="true">
@@ -62,6 +82,17 @@
       <li><a href="/tags" class="<%= (typeof currentPath !== 'undefined' && (currentPath === '/tags' || currentPath.startsWith('/tag/'))) ? 'active' : '' %>">标签 · TAGS</a></li>
       <li><a href="/search" class="<%= (typeof currentPath !== 'undefined' && currentPath === '/search') ? 'active' : '' %>">搜索 · SEARCH</a></li>
       <li><a href="/feed.xml">RSS</a></li>
+      <li class="nav-theme">
+        <button id="themeToggle" class="theme-toggle" type="button" aria-label="切换主题" title="切换主题">
+          <span class="theme-toggle-icon" aria-hidden="true">◐</span>
+          <span class="theme-toggle-text">纸墨</span>
+        </button>
+      </li>
     </ul>
   </nav>
+  <% } else { %>
+  <button id="themeToggle" class="theme-toggle theme-toggle--floating" type="button" aria-label="切换主题" title="切换主题">
+    <span class="theme-toggle-icon" aria-hidden="true">◐</span>
+    <span class="theme-toggle-text">纸墨</span>
+  </button>
   <% } %>

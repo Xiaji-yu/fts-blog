@@ -14,6 +14,56 @@
 
   var docEl = document.documentElement;
 
+  /* ── Theme switching (blueprint ↔ paper) ──
+     The head script already applied the saved theme before first paint;
+     this keeps the button label, <meta theme-color> and the highlight.js
+     stylesheet (dark for blueprint, light for paper) in sync. */
+  (function initTheme() {
+    var btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    var label = btn.querySelector('.theme-toggle-text');
+
+    function current() {
+      return docEl.getAttribute('data-theme') === 'paper' ? 'paper' : 'blueprint';
+    }
+
+    function sync(theme) {
+      var isPaper = theme === 'paper';
+      docEl.setAttribute('data-theme', theme);
+
+      var meta = document.getElementById('themeColor');
+      if (meta) meta.setAttribute('content', isPaper ? '#f5f4f1' : '#0a1929');
+
+      var light = document.getElementById('hljsLight');
+      var dark = document.getElementById('hljsDark');
+      if (light) light.disabled = !isPaper;
+      if (dark) dark.disabled = isPaper;
+
+      if (label) label.textContent = isPaper ? '蓝图' : '纸墨';
+      btn.setAttribute(
+        'aria-label',
+        '切换主题，当前' + (isPaper ? '纸墨' : '蓝图') + '主题'
+      );
+      btn.setAttribute('title', '切换到' + (isPaper ? '蓝图' : '纸墨') + '主题');
+    }
+
+    btn.addEventListener('click', function () {
+      var next = current() === 'paper' ? 'blueprint' : 'paper';
+      try {
+        localStorage.setItem('fts-theme', next);
+      } catch (e) {}
+      sync(next);
+    });
+
+    // Keep multiple tabs in step.
+    window.addEventListener('storage', function (e) {
+      if (e.key !== 'fts-theme') return;
+      sync(e.newValue === 'paper' ? 'paper' : 'blueprint');
+    });
+
+    sync(current());
+  })();
+
   /* Arm the [data-reveal] system before the entrance starts: elements opt in
      via the attribute, and html.js-anim is what actually hides them, so
      no-JS / reduced-motion visitors never see a hidden page. Counters are

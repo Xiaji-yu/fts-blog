@@ -1,0 +1,338 @@
+/* ═══════════════════════════════════════════
+   PAPER THEME · 纸白 + 墨黑
+   与 xiaji-home / dashboard / Moments 同一套设计语言：
+   米白纸面、近黑墨色、细线描边、mono 小标签、无彩色（砖红只留给异常）。
+   通过 <html data-theme="paper"> 启用；默认仍是 blueprint。
+   ═══════════════════════════════════════════ */
+
+html[data-theme="paper"] {
+  /* 纸墨色板 —— 数值与 xiaji-home/src/styles/tokens.css 对齐 */
+  --bg: #f5f4f1;
+  --bg-top: #f5f4f1;
+  --bg-rgb: 245, 244, 241;
+  --card-rgb: 255, 255, 255;
+  --hover-rgb: 239, 238, 234;
+  --tint-rgb: 17, 17, 17;
+  --accent-rgb: 17, 17, 17;
+
+  --bg-card: #ffffff;
+  --bg-hover: #efeeea;
+  --fg: #111111;
+  --fg-dim: #3a3a3a;
+  --muted: #6f6c66;
+  --border: #cbc9c3;
+  --border-strong: #111111;
+
+  --accent: #111111;
+  --accent-soft: #6f6c66;
+  --accent-glow: transparent;
+  --on-accent: #f5f4f1;
+  --overlay: rgba(17, 17, 17, 0.92);
+
+  --grid-line: transparent;
+
+  /* 纸墨系统里唯一的彩色：真正的异常 / 危险操作 */
+  --paper-danger: #9c3222;
+
+  --font-cn:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei",
+    "PingFang SC", "Hiragino Sans GB", sans-serif;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, "Liberation Mono",
+    Menlo, monospace;
+}
+
+html[data-theme="paper"] body {
+  letter-spacing: 0;
+  background: var(--bg);
+}
+
+html[data-theme="paper"] ::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* 纸面上不要蓝图那种发光字效 */
+html[data-theme="paper"] * {
+  text-shadow: none !important;
+}
+
+/* ── 背景：把蓝色工程网格换成极淡墨点阵 ── */
+html[data-theme="paper"] body::before {
+  background-image: radial-gradient(rgba(17, 17, 17, 0.09) 0.8px, transparent 0.9px);
+  background-size: 24px 24px;
+}
+
+html[data-theme="paper"] body::after {
+  display: none;
+}
+
+/* ── 排版：更紧凑的标题字距，正文去掉蓝图式稀疏感 ── */
+html[data-theme="paper"] .title-block .main-title {
+  letter-spacing: -0.01em;
+}
+
+html[data-theme="paper"] .title-block .sub-title {
+  letter-spacing: 0;
+}
+
+/* ── 描边：纸墨用实线，蓝图才用虚线 ── */
+html[data-theme="paper"] .card,
+html[data-theme="paper"] .hot-item,
+html[data-theme="paper"] .drum-viewport,
+html[data-theme="paper"] .hero-search,
+html[data-theme="paper"] .status-panel,
+html[data-theme="paper"] .upload-zone,
+html[data-theme="paper"] .posts-page .homepage-content {
+  border-style: solid;
+}
+
+html[data-theme="paper"] .post-list-item,
+html[data-theme="paper"] .drum-item {
+  border-bottom-style: solid;
+}
+
+html[data-theme="paper"] .nav {
+  border-bottom-color: var(--fg);
+}
+
+html[data-theme="paper"] .footer-block {
+  border-top-color: var(--fg);
+}
+
+/* ── 纸面不需要毛玻璃 ── */
+html[data-theme="paper"] .card,
+html[data-theme="paper"] .btn,
+html[data-theme="paper"] .form-input,
+html[data-theme="paper"] .form-textarea,
+html[data-theme="paper"] .drum-viewport,
+html[data-theme="paper"] .back-to-top,
+html[data-theme="paper"] .theme-toggle--floating,
+html[data-theme="paper"] .modal-overlay {
+  backdrop-filter: none;
+}
+
+/* ── 交互：悬停时墨色填充 / 硬阴影，取代蓝色光晕 ── */
+html[data-theme="paper"] .btn {
+  background: var(--bg-card);
+  border-color: var(--fg);
+}
+
+html[data-theme="paper"] .btn:hover {
+  background: var(--fg);
+  color: var(--bg);
+  box-shadow: none;
+}
+
+html[data-theme="paper"] .btn-outline {
+  background: transparent;
+}
+
+html[data-theme="paper"] .btn-outline:hover {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+html[data-theme="paper"] .btn-danger {
+  border-color: var(--paper-danger);
+  background: transparent;
+  color: var(--paper-danger);
+  box-shadow: none;
+}
+
+html[data-theme="paper"] .btn-danger:hover {
+  background: var(--paper-danger);
+  border-color: var(--paper-danger);
+  color: var(--bg);
+  box-shadow: none;
+}
+
+html[data-theme="paper"] .tag {
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+html[data-theme="paper"] .tag:hover {
+  background: var(--fg);
+  border-color: var(--fg);
+  color: var(--bg);
+  box-shadow: none;
+}
+
+html[data-theme="paper"] .card:hover,
+html[data-theme="paper"] .hot-item:hover {
+  background: var(--bg-card);
+  border-color: var(--fg);
+  box-shadow: 4px 4px 0 var(--fg);
+}
+
+html[data-theme="paper"] .back-to-top {
+  background: var(--bg-card);
+  border-color: var(--fg);
+}
+
+html[data-theme="paper"] .back-to-top:hover {
+  background: var(--fg);
+  color: var(--bg);
+  box-shadow: none;
+}
+
+html[data-theme="paper"] .theme-toggle:hover {
+  background: var(--fg);
+  border-color: var(--fg);
+  color: var(--bg);
+}
+
+html[data-theme="paper"] .form-input,
+html[data-theme="paper"] .form-textarea {
+  background: var(--bg-card);
+}
+
+html[data-theme="paper"] .form-input:focus,
+html[data-theme="paper"] .form-textarea:focus {
+  border-color: var(--fg);
+  box-shadow: 0 0 0 1px var(--fg);
+}
+
+html[data-theme="paper"] .modal-content {
+  background: var(--bg-card);
+  border-color: var(--fg);
+}
+
+/* On paper, 0.22 opacity makes the inactive rows nearly invisible —
+   lift them so the archive still reads as a list. */
+html[data-theme="paper"] .drum-item {
+  opacity: 0.55;
+}
+
+html[data-theme="paper"] .drum-item:hover {
+  opacity: 0.8;
+}
+
+html[data-theme="paper"] .drum-item.active {
+  opacity: 1;
+  background: var(--bg-hover);
+  box-shadow: inset 0 0 0 1px var(--fg);
+}
+
+html[data-theme="paper"] .drum-item.active .drum-number {
+  transform: none;
+}
+
+/* 进度条 / 加载条：墨色渐变，不再有橙色光晕 */
+html[data-theme="paper"] .scroll-progress,
+html[data-theme="paper"] .page-splash-bar {
+  box-shadow: none;
+}
+
+/* ── 全屏遮罩层：纸白底、墨点阵 ── */
+html[data-theme="paper"] .page-splash-grid,
+html[data-theme="paper"] .drawing-loader-grid {
+  display: none;
+}
+
+html[data-theme="paper"] .page-splash,
+html[data-theme="paper"] .drawing-loader,
+html[data-theme="paper"] .error-loader,
+html[data-theme="paper"] .tags-loader,
+html[data-theme="paper"] .admin-loader,
+html[data-theme="paper"] .api-loader,
+html[data-theme="paper"] .search-page-loader {
+  background: var(--bg);
+}
+
+html[data-theme="paper"] .page-splash-stamp {
+  background: var(--fg);
+  color: var(--bg);
+  box-shadow: none;
+}
+
+html[data-theme="paper"] .drawing-loader-stamp {
+  border-color: var(--fg);
+  color: var(--fg);
+  box-shadow: none;
+}
+
+html[data-theme="paper"] .drawing-loader-bar-wrap,
+html[data-theme="paper"] .page-splash-bar-wrap {
+  background: var(--bg-hover);
+  border-color: var(--border);
+}
+
+html[data-theme="paper"] .search-loader,
+html[data-theme="paper"] .search-page-loader-ring {
+  box-shadow: none;
+}
+
+html[data-theme="paper"] .search-loader {
+  background: var(--bg-card);
+  border-color: var(--fg);
+}
+
+/* 蓝图扫描线与鼠标光晕在纸面上没有意义 */
+html[data-theme="paper"] .homepage-content .title-block::after,
+html[data-theme="paper"] .cursor-glow {
+  display: none;
+}
+
+/* ── 正文 ── */
+html[data-theme="paper"] .description code {
+  background: var(--bg-hover);
+  border-color: var(--border);
+  color: var(--fg);
+}
+
+html[data-theme="paper"] .description pre {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+html[data-theme="paper"] .description pre code,
+html[data-theme="paper"] .description pre code.hljs {
+  background: transparent;
+}
+
+html[data-theme="paper"] .description table th {
+  background: var(--bg-hover);
+}
+
+html[data-theme="paper"] .description a:hover {
+  text-shadow: none;
+}
+
+html[data-theme="paper"] .code-copy {
+  background: var(--bg-card);
+  border-color: var(--border-strong);
+  color: var(--fg-dim);
+}
+
+html[data-theme="paper"] .code-copy:hover {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
+
+html[data-theme="paper"] .code-copy.copied {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+  box-shadow: none;
+}
+
+/* ── 归档页的蓝图框：改成一圈实线，去掉角标动画感 ── */
+html[data-theme="paper"] .posts-page .homepage-content {
+  background:
+    radial-gradient(rgba(17, 17, 17, 0.05) 0.8px, transparent 0.9px),
+    var(--bg);
+  background-size: 24px 24px, 100% 100%;
+}
+
+/* ── 灯箱：保留深底，让图片成为唯一焦点 ── */
+html[data-theme="paper"] .lightbox img {
+  border-color: var(--bg);
+  box-shadow: none;
+}
+
+html[data-theme="paper"] .lightbox .lightbox-hint {
+  color: var(--bg-hover);
+}

@@ -117,6 +117,7 @@ function assetVersion(relPath) {
 }
 const ASSET_VERSIONS = {
   css: assetVersion('css/style.css'),
+  themeCss: assetVersion('css/theme-paper.css'),
   js: assetVersion('js/main.js')
 };
 app.use((req, res, next) => {
