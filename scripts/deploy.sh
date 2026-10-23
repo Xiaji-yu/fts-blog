@@ -165,7 +165,6 @@ if ! pm2 describe "${APP_NAME}" >/dev/null 2>&1; then
   fi
   echo "==> 首次启动：pm2 start ecosystem.config.js（应用名 ${APP_NAME}，端口 ${PORT}）"
   PORT="${PORT}" pm2 start ecosystem.config.js --update-env
-  pm2 save
 else
   echo "==> pm2 reload ${APP_NAME}（最多等 10 秒）"
   if ! timeout 10s pm2 reload "${APP_NAME}" --update-env; then
@@ -190,5 +189,10 @@ if [ "${ok}" != "1" ]; then
   pm2 logs "${APP_NAME}" --lines 30 --nostream >&2 || true
   exit 1
 fi
+
+# Persist the process list and the env vars injected above, so TRUST_PROXY
+# survives `pm2 resurrect` after a server reboot.
+echo '==> pm2 save（保存进程列表与当前环境）'
+pm2 save
 
 echo "==> 完成：$(pm2 describe "${APP_NAME}" | grep -E 'status|script path' | head -2)"
