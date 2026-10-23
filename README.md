@@ -42,18 +42,30 @@ pm2 restart blog        # 重启
 pm2 stop blog           # 停止
 pm2 delete blog         # 删除进程
 
-# 更新代码
+# 一键更新（拉代码 → npm ci --omit=dev → 测试 → reload → 健康检查）
 cd /var/www/fts-blog
-git pull origin main
-npm ci --omit=dev
-pm2 restart blog
-
-> **重要**: `git pull` 只会拉取代码，**不会**自动安装新的依赖包。
-> 新增依赖（如 `highlight.js`、`express-rate-limit`）必须执行 `npm ci --omit=dev`（或 `npm install --production`）后才能启动，否则会报 `Cannot find module 'highlight.js'` 类似错误。
+bash scripts/deploy.sh
 
 # 开机自启
 pm2 startup && pm2 save
 ```
+
+`scripts/deploy.sh` 会自动从 `pm2 jlist` 找到 `pm_cwd` 指向本仓库的进程
+（所以 PM2 服务名不叫 `blog` 也能更新）；也可以在命令前手动指定：
+
+```bash
+APP_NAME=fts-blog bash scripts/deploy.sh   # 指定 PM2 服务名
+PORT=3000 bash scripts/deploy.sh           # 指定健康检查端口
+SKIP_TESTS=1 bash scripts/deploy.sh        # 跳过测试直接上线
+ALLOW_DIRTY=1 bash scripts/deploy.sh       # 允许带未提交改动部署
+```
+
+任一步失败都会立即退出，PM2 里继续跑上一个可用版本。若提示
+`PM2 里没有「xxx」，但端口 3000 已被占用`，先运行 `pm2 ls` 确认实际服务名
+（或用 `ss -ltnp | grep :3000` 确认进程），再用 `APP_NAME=<真实名字>` 重跑。
+
+> **重要**: `git pull` 只会拉取代码，**不会**自动安装新的依赖包。
+> 新增依赖（如 `highlight.js`、`express-rate-limit`）必须执行 `npm ci --omit=dev`（或 `npm install --production`）后才能启动，否则会报 `Cannot find module 'highlight.js'` 类似错误。`deploy.sh` 已经包含这一步。
 
 > **建议**: 在 `ecosystem.config.js` 的 `env` 中设置一个随机 `SESSION_SECRET`，
 > 未设置时会自动生成并持久化到 `data/.session-secret`（跨重启保持登录态）。
@@ -217,6 +229,8 @@ fts-blog/
 │   ├── admin.js               # 管理页面
 │   ├── public.js              # 公开页面 + RSS + 搜索 + 标签
 │   └── import.js              # Obsidian 导入
+├── scripts/
+│   └── deploy.sh              # 生产一键更新（pull + npm ci + 测试 + reload + 健康检查）
 ├── public/
 │   └── css/
 │       ├── style.css          # 基础 + 蓝图主题（默认）

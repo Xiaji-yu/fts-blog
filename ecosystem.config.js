@@ -3,7 +3,9 @@
 module.exports = {
   apps: [
     {
-      name: 'blog',
+      // deploy.sh can override this (APP_NAME=...), so the PM2 process name
+      // always matches the one the update script reloads.
+      name: process.env.APP_NAME || 'blog',
       script: './server.js',
       instances: 1,
       exec_mode: 'fork',
