@@ -84,17 +84,36 @@ if [ -n "$PM2_INFO" ]; then
 fi
 APP_NAME="${APP_NAME:-blog}"
 
-# 端口优先级：显式 PORT > PM2 实际 env.PORT > config.json > 3000
+# 端口优先级：显式 PORT > PM2 实际 env.PORT > config.json > 3000。
+# 直接读 config.json，不要 require config/loader —— 它会往 stdout 打印
+# “✓ Config loaded ...”，把端口变量污染成多行文本。
 PORT="${PORT:-$PM2_PORT}"
 if [ -z "$PORT" ]; then
-  PORT="$(node -e 'try { process.stdout.write(String(require("./config/loader").server.port || 3000)); } catch (e) { process.stdout.write("3000"); }' 2>/dev/null || echo 3000)"
+  PORT="$(node -e '
+    try {
+      const fs = require("fs");
+      if (fs.existsSync("config.json")) {
+        const port = JSON.parse(fs.readFileSync("config.json", "utf8"))?.server?.port;
+        if (port) {
+          process.stdout.write(String(port));
+          process.exit(0);
+        }
+      }
+    } catch (e) {}
+    process.stdout.write("3000");
+  ')"
 fi
 HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:${PORT}/healthz}"
 
 export APP_NAME
+# 生产站点通常在 Nginx 等反向代理之后。把 TRUST_PROXY 一并写进 PM2 的
+# 环境，避免 express-rate-limit 因 X-Forwarded-For 报 ValidationError。
+# 直接暴露端口、没有代理时用 TRUST_PROXY=0 关掉。
+export TRUST_PROXY="${TRUST_PROXY:-1}"
 
 echo "==> 运行用户：$(id -un) · 应用名：${APP_NAME}（可用 APP_NAME=... 覆盖）"
 echo "==> 健康检查：${HEALTH_URL}（可用 PORT=... 或 HEALTH_URL=... 覆盖）"
+echo "==> TRUST_PROXY=${TRUST_PROXY}（直连无代理时用 TRUST_PROXY=0）"
 
 pm2_name_hint() {
   {
