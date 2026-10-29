@@ -1,0 +1,826 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   ADMIN LOGIN · 管理后台登录页
+   设计语言移植自 xiaji-home 的内容后台登录页：
+   点阵纸底、居中卡片、四条边线向屏幕延伸（裁切标记）、
+   四角十字准星、两侧刻度尺、卡片内 100vw 结构线、底线式输入条。
+   颜色全部走 style.css / theme-paper.css 的主题变量，
+   blueprint（默认深蓝图）与 paper（纸墨）两套主题各自成立。
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* 卡片实心底：盖住穿过自己的延伸线（blueprint 用抬升一档的实色） */
+  --alog-card: #0c1f35;
+  /* 异常色：blueprint 用亮一点的珊瑚红，paper 用系统里的砖红 */
+  --alog-danger: #ff7264;
+  --alog-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+html[data-theme="paper"] {
+  --alog-card: var(--bg);
+  --alog-danger: var(--paper-danger, #9c3222);
+}
+
+/* 登录页不需要右上角的指北针（和 PRIVATE AREA 标签重叠） */
+body:has(.alog) .n-marker {
+  display: none;
+}
+/* 窄屏下主题切换按钮贴得更近，往下让出 PRIVATE AREA 标签的位置 */
+@media (max-width: 1200px) {
+  body:has(.alog) .theme-toggle--floating {
+    top: 4.6rem;
+  }
+}
+
+/* ---- 根容器：从 .container 里逃逸成整屏 -------------------------------- */
+.alog {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-top: calc(-1 * var(--spacing-lg));
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-color: var(--bg);
+  /* 点阵纹理：等大墨点，和 xiaji-home 的粒子纸面同一个语言 */
+  background-image: radial-gradient(circle, rgba(var(--tint-rgb), 0.09) 1px, transparent 1.1px);
+  background-size: 17px 17px;
+  color: var(--fg);
+}
+
+/* ---- 四角的常驻小标签 / 页脚标注 ---- */
+.alog__tag {
+  position: absolute;
+  top: 26px;
+  left: clamp(24px, 5vw, 72px);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  color: var(--fg-dim);
+  z-index: 2;
+}
+.alog__tag--r {
+  left: auto;
+  right: clamp(24px, 5vw, 72px);
+  color: var(--muted);
+}
+
+.alog__foot {
+  position: absolute;
+  left: clamp(24px, 5vw, 72px);
+  bottom: 26px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  z-index: 2;
+}
+.alog__foot--r {
+  left: auto;
+  right: clamp(24px, 5vw, 72px);
+  text-align: right;
+}
+
+/* ---- 四角十字准星 ---- */
+.alog__mark {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  z-index: 2;
+}
+.alog__mark::before,
+.alog__mark::after {
+  content: '';
+  position: absolute;
+  background: var(--fg-dim);
+}
+.alog__mark::before {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+}
+.alog__mark::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+}
+.alog__mark--tl { top: 14px; left: 14px; }
+.alog__mark--tr { top: 14px; right: 14px; }
+.alog__mark--bl { bottom: 14px; left: 14px; }
+.alog__mark--br { bottom: 14px; right: 14px; }
+
+/* ---- 屏幕两侧的刻度尺（仪器面板语言） ---- */
+.alog__ticks {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 9px;
+  height: 34vh;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--border) 0 1px,
+    transparent 1px 11px
+  );
+  z-index: 2;
+}
+.alog__ticks--l { left: 22px; }
+.alog__ticks--r { right: 22px; }
+
+/* ---- 面板与四条延伸线 -----------------------------------------------------
+   卡片四条边线各自向屏幕四边延伸（排版里的「裁切标记」语言）：
+   线画在卡片层之下，穿过卡片的部分被实心卡片底盖住，
+   看起来就是「从边距长进来、消失在卡片后面」。 */
+.alog__panel {
+  position: relative;
+  width: min(460px, 100%);
+}
+
+/* 卡片两侧的纵向标注线：贴着卡片边框各两条（一实一点），上下贯穿全屏 */
+.alog__vrules {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 56px;
+  pointer-events: none;
+}
+.alog__vrules--l { right: 100%; }
+.alog__vrules--r { left: 100%; }
+.alog__vrules::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  /* 两端渐隐：线「长」进屏幕边缘，不在边缘处生硬截断 */
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--border) 40px,
+    var(--border) calc(100% - 40px),
+    transparent
+  );
+}
+.alog__vrules::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  opacity: 0.55;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--border) 0 5px,
+    transparent 5px 12px
+  );
+}
+.alog__vrules--l::before { right: 22px; }
+.alog__vrules--l::after { right: 46px; }
+.alog__vrules--r::before { left: 22px; }
+.alog__vrules--r::after { left: 46px; }
+
+.alog__rule {
+  position: absolute;
+  background: var(--border-strong);
+  z-index: 0;
+}
+/* 延伸线的远端各落一枚小方点节点（8 个，像图纸的定位标记） */
+.alog__rule::before,
+.alog__rule::after {
+  content: '';
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: var(--fg);
+}
+.alog__rule--t::before {
+  left: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.alog__rule--t::after {
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.alog__rule--b::before {
+  left: 30px;
+  bottom: 50%;
+  transform: translateY(50%);
+}
+.alog__rule--b::after {
+  right: 30px;
+  bottom: 50%;
+  transform: translateY(50%);
+}
+.alog__rule--l::before {
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.alog__rule--l::after {
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.alog__rule--r::before {
+  top: 30px;
+  right: 50%;
+  transform: translateX(50%);
+}
+.alog__rule--r::after {
+  bottom: 30px;
+  right: 50%;
+  transform: translateX(50%);
+}
+.alog__rule--t {
+  left: 50%;
+  top: 0;
+  width: 100vw;
+  height: 1.5px;
+  transform: translate(-50%, -50%);
+}
+.alog__rule--b {
+  left: 50%;
+  bottom: 0;
+  width: 100vw;
+  height: 1.5px;
+  transform: translate(-50%, 50%);
+}
+.alog__rule--l {
+  top: 50%;
+  left: 0;
+  width: 1.5px;
+  height: 100vh;
+  transform: translate(-50%, -50%);
+}
+.alog__rule--r {
+  top: 50%;
+  right: 0;
+  width: 1.5px;
+  height: 100vh;
+  transform: translate(50%, -50%);
+}
+
+/* ---- 卡片（实心底，盖住穿过自己的线） ---- */
+.alog__card {
+  position: relative;
+  z-index: 1;
+  background: var(--alog-card);
+  border: 1.5px solid var(--border-strong);
+  box-shadow: 8px 8px 0 rgba(var(--tint-rgb), 0.07);
+}
+
+/* ---- 卡片内的结构线：延伸贯穿全屏 ----------------------------------------
+   伪元素以分隔线为中心横贯 100vw，卡片内的部分与 border 重合
+   （同色同宽看不出），卡片外露出「从边距长进来」。 */
+.alog__bar,
+.alog__no,
+.alog__row,
+.alog__session {
+  position: relative;
+}
+.alog__bar::after,
+.alog__no::after,
+.alog__row::before,
+.alog__session::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  width: 100vw;
+  height: 1px;
+  background: var(--border);
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: -1;
+}
+.alog__bar::after { bottom: -1px; }
+.alog__no::after { bottom: -1px; }
+.alog__row::before { top: -1px; }
+.alog__session::before { top: -1px; }
+
+/* ---- 卡片顶栏 ---- */
+.alog__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 22px;
+  border-bottom: 1px solid var(--border-strong);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  color: var(--fg-dim);
+}
+.alog__bar span:last-child {
+  color: var(--muted);
+}
+
+/* ---- 表单 ---- */
+.alog__form {
+  display: flex;
+  flex-direction: column;
+  padding: 34px 32px 28px;
+}
+
+/* 章节编号行：站点里「01 / 02 / 03」的板式语言 */
+.alog__no {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+  margin-bottom: 30px;
+}
+
+.alog__welcome {
+  margin: 0 0 8px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.alog__sub {
+  margin: 0 0 36px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* 服务端渲染的错误行（凭据错误 / 限流等） */
+.alog__error {
+  margin: -18px 0 26px;
+  padding: 9px 12px 9px 14px;
+  border-left: 2px solid var(--alog-danger);
+  background: rgba(var(--tint-rgb), 0.04);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--alog-danger);
+  word-break: break-word;
+}
+
+.alog__labelrow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  /* 和输入条同一档内边距：标签、右侧英文标注站在同一条竖向基准线上 */
+  padding: 0 10px 0 14px;
+}
+.alog__labelrow--gap {
+  margin-top: 26px;
+}
+
+.alog__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--fg-dim);
+  margin-bottom: 6px;
+}
+
+.alog__labelen {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+/* 输入条：只留底部一条 1px 细线，像印刷表单上的填写栏。
+   聚焦时不套方框 —— 而是「把这一格填进纸面」：
+   极轻的底色 + 底线转墨 + 左侧定位块长出来 + 刻度尺淡出。 */
+.alog__field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 10px 0 14px;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  transition:
+    border-bottom-color 0.2s var(--alog-ease),
+    background-color 0.2s var(--alog-ease);
+}
+/* 填写刻度尺：输入条下方一排细刻度（图纸的填写栏语言） */
+.alog__field::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -8px;
+  height: 5px;
+  background: repeating-linear-gradient(
+    to right,
+    var(--border) 0 1px,
+    transparent 1px 13px
+  );
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 0.2s var(--alog-ease);
+}
+/* 左侧定位块：聚焦时从中间长出来，标出「正在填这一格」 */
+.alog__field::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: 0;
+  background: var(--fg);
+  transform: translateY(-50%);
+  transition: height 0.22s var(--alog-ease);
+  pointer-events: none;
+}
+.alog__field:focus-within {
+  border-bottom-color: var(--fg);
+  background: var(--bg-hover);
+}
+.alog__field:focus-within::before {
+  opacity: 0; /* 有底色了，刻度尺再留着就成了双线 */
+}
+.alog__field:focus-within::after {
+  height: 20px;
+}
+/* 焦点完全由上面这套样式表达，任何 UA / 扩展画的方框都压掉 */
+.alog__field,
+.alog__field:focus-within,
+.alog__input,
+.alog__input:focus,
+.alog__input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+/* 焦点线只在「出错」时用墨色画满：出错才值得多一条线 */
+.alog__caret {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1.5px;
+  height: 2px;
+  background: var(--fg);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s var(--alog-ease);
+  pointer-events: none;
+}
+
+@keyframes alog-shake {
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* 凭据错误：整个错误行抖一下 */
+.alog__error.is-shake {
+  animation: alog-shake 0.4s var(--alog-ease);
+}
+
+/* 大写锁定警告 */
+.alog__caps {
+  margin: 10px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--alog-danger);
+}
+
+.alog__input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  /* 上下留够呼吸，左右交给输入条自己的内边距 —— 聚焦时底色块才不会撑出边缘 */
+  padding: 15px 0 14px;
+  color: var(--fg);
+  caret-color: var(--fg);
+  outline: none;
+  box-shadow: none;
+  appearance: none;
+}
+.alog__input::placeholder {
+  color: var(--muted);
+  opacity: 0.55;
+  transition: opacity 0.2s var(--alog-ease);
+}
+/* 聚焦时占位文案再退一步，让位给真正输入的内容 */
+.alog__field:focus-within .alog__input::placeholder {
+  opacity: 0.38;
+}
+/* 浏览器自动填充会把输入框涂成淡黄 / 淡蓝，和主题底色完全不搭：
+   用等大面积的内阴影盖住它，文字与光标仍保持前景色 */
+.alog__input:-webkit-autofill,
+.alog__input:-webkit-autofill:hover,
+.alog__input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--fg);
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-hover) inset;
+  caret-color: var(--fg);
+  transition: background-color 99999s ease-out 0s;
+}
+
+.alog__show {
+  border: 0;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 6px 0 6px 12px;
+  outline: none;
+  transition: color 0.15s var(--alog-ease);
+}
+.alog__show:hover {
+  color: var(--fg);
+}
+/* 键盘走到这里时用下划线提示，而不是再画一个方框 */
+.alog__show:focus-visible {
+  color: var(--fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  outline: none;
+}
+
+.alog__submit {
+  margin-top: 40px;
+  border: 1px solid var(--border-strong);
+  background: var(--fg);
+  color: var(--bg);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-indent: 0.28em; /* 视觉居中补偿字距 */
+  padding: 14px 0;
+  cursor: pointer;
+  transition:
+    opacity 0.15s var(--alog-ease),
+    background 0.15s var(--alog-ease);
+}
+.alog__submit:hover {
+  background: var(--fg-dim);
+}
+.alog__submit:active {
+  opacity: 0.85;
+}
+.alog__submit:focus-visible {
+  outline: 1px solid var(--fg);
+  outline-offset: 3px;
+}
+
+/* ---- 会话信息面板：左会话 · 右系统 ------------------------
+   面板顶线横贯 100vw（伪元素画在 ::before 上）。 */
+.alog__session {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 26px;
+  border-top: 1px solid var(--border);
+  margin-top: 34px;
+  padding-top: 16px;
+}
+
+.alog__sesscol {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+
+.alog__sesskey {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+.alog__sessval {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.alog__row {
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.alog__row a {
+  color: var(--fg-dim);
+  text-decoration: none;
+}
+.alog__row a:hover {
+  color: var(--fg);
+  text-decoration: underline;
+}
+
+/* ---- 开场编排：线沿自己的方向推进进场 ------------------------------
+   横线横向平移（从左/右屏幕外推入），竖线纵向平移（从上/下推入），
+   像一排尺子被依次推到位。加载遮罩（.admin-loader.active）退场后才启动，
+   遮罩底下不空转。 */
+
+@keyframes alog-in-h-from-left {
+  from { transform: translate(calc(-50% - 100vw), 0); }
+  to { transform: translate(-50%, 0); }
+}
+@keyframes alog-in-h-from-right {
+  from { transform: translate(calc(-50% + 100vw), 0); }
+  to { transform: translate(-50%, 0); }
+}
+@keyframes alog-in-t-from-left {
+  from { transform: translate(calc(-50% - 100vw), -50%); }
+  to { transform: translate(-50%, -50%); }
+}
+@keyframes alog-in-b-from-right {
+  from { transform: translate(calc(-50% + 100vw), 50%); }
+  to { transform: translate(-50%, 50%); }
+}
+@keyframes alog-in-l-from-top {
+  from { transform: translate(-50%, calc(-50% - 100vh)); }
+  to { transform: translate(-50%, -50%); }
+}
+@keyframes alog-in-r-from-bottom {
+  from { transform: translate(50%, calc(-50% + 100vh)); }
+  to { transform: translate(50%, -50%); }
+}
+@keyframes alog-in-v-from-top {
+  from { transform: translateY(-100vh); }
+  to { transform: translateY(0); }
+}
+@keyframes alog-in-v-from-bottom {
+  from { transform: translateY(100vh); }
+  to { transform: translateY(0); }
+}
+@keyframes alog-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes alog-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 页面级加载遮罩退场后（main.js 摘掉 .active）才开始入场编排 */
+body:not(:has(.admin-loader.active)) .alog__rule--t {
+  animation: alog-in-t-from-left 0.75s var(--alog-ease) 0.3s both;
+}
+body:not(:has(.admin-loader.active)) .alog__rule--l {
+  animation: alog-in-l-from-top 0.75s var(--alog-ease) 0.5s both;
+}
+body:not(:has(.admin-loader.active)) .alog__rule--r {
+  animation: alog-in-r-from-bottom 0.75s var(--alog-ease) 0.65s both;
+}
+body:not(:has(.admin-loader.active)) .alog__rule--b {
+  animation: alog-in-b-from-right 0.75s var(--alog-ease) 0.8s both;
+}
+body:not(:has(.admin-loader.active)) .alog__bar::after {
+  animation: alog-in-h-from-right 0.7s var(--alog-ease) 0.95s both;
+}
+body:not(:has(.admin-loader.active)) .alog__no::after {
+  animation: alog-in-h-from-left 0.7s var(--alog-ease) 1.05s both;
+}
+body:not(:has(.admin-loader.active)) .alog__session::before {
+  animation: alog-in-h-from-left 0.7s var(--alog-ease) 1.25s both;
+}
+body:not(:has(.admin-loader.active)) .alog__row::before {
+  animation: alog-in-h-from-right 0.7s var(--alog-ease) 1.35s both;
+}
+body:not(:has(.admin-loader.active)) .alog__vrules--l {
+  animation: alog-in-v-from-top 0.9s var(--alog-ease) 0.9s both;
+}
+body:not(:has(.admin-loader.active)) .alog__vrules--r {
+  animation: alog-in-v-from-bottom 0.9s var(--alog-ease) 1.05s both;
+}
+body:not(:has(.admin-loader.active)) .alog__card {
+  animation: alog-card-in 0.6s var(--alog-ease) 0.12s both;
+}
+body:not(:has(.admin-loader.active)) .alog__tag,
+body:not(:has(.admin-loader.active)) .alog__foot {
+  animation: alog-fade 0.6s var(--alog-ease) 1.5s both;
+}
+body:not(:has(.admin-loader.active)) .alog__ticks {
+  animation: alog-fade 0.6s var(--alog-ease) 1.3s both;
+}
+body:not(:has(.admin-loader.active)) .alog__mark {
+  animation: alog-fade 0.6s var(--alog-ease) 1.4s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .alog,
+  .alog * {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+  }
+}
+
+/* ---- 窄屏：面板占满宽度，延伸线保留，装饰收紧 ---- */
+@media (max-width: 1180px) {
+  .alog__vrules--l::after,
+  .alog__vrules--r::after {
+    display: none; /* 空间不够时先收掉外侧的点线 */
+  }
+}
+@media (max-width: 900px) {
+  .alog__vrules {
+    display: none; /* 面板贴边后标注线没有立足之地 */
+  }
+}
+@media (max-width: 560px) {
+  /* 手机上一屏本来就矮：整张卡按「能一屏放下」重排 ——
+     标题、间距、按钮逐项收一档，会话面板保持两列 */
+  .alog {
+    padding: 12px 10px;
+  }
+  .alog__tag--r,
+  .alog__mark,
+  .alog__ticks,
+  .alog__foot {
+    display: none;
+  }
+  /* 卡片窄下来：手机上不再顶满整宽，两侧留出纸面 */
+  .alog__panel {
+    width: min(340px, 92vw);
+  }
+  .alog__bar {
+    padding: 6px 12px;
+    font-size: 9.5px;
+  }
+  .alog__form {
+    padding: 10px 12px 8px;
+  }
+  .alog__no {
+    margin-bottom: 6px;
+    padding-bottom: 7px;
+    font-size: 9.5px;
+  }
+  .alog__welcome {
+    margin-bottom: 2px;
+    font-size: 19px;
+  }
+  .alog__sub {
+    margin-bottom: 16px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .alog__error {
+    margin: 0 0 14px;
+    font-size: 10px;
+  }
+  .alog__label {
+    font-size: 10.5px;
+  }
+  .alog__labelrow--gap {
+    margin-top: 16px;
+  }
+  /* iOS 聚焦字号 <16px 的输入框会自动放大整页，字号保持 16px，
+     靠上下内边距把输入条压矮 */
+  .alog__input {
+    padding: 10px 0 9px;
+    font-size: 16px;
+  }
+  .alog__show {
+    font-size: 10.5px;
+  }
+  .alog__submit {
+    margin-top: 16px;
+    padding: 10px 0;
+    font-size: 12.5px;
+  }
+  .alog__session {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 14px;
+    margin-top: 18px;
+    padding-top: 12px;
+  }
+  .alog__sesscol {
+    gap: 4px;
+  }
+  .alog__sesskey {
+    font-size: 9px;
+  }
+  .alog__sessval {
+    font-size: 10.5px;
+  }
+  .alog__row {
+    margin-top: 14px;
+    padding-top: 10px;
+    font-size: 10.5px;
+  }
+}

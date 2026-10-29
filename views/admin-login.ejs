@@ -1,4 +1,11 @@
-<%- include('partials/header', { title: title, noSplash: true }) %>
+<%# 管理后台登录页 —— 版式移植自 xiaji-home 内容后台登录页：
+    点阵纸底 + 居中卡片 + 裁切标记延伸线 + 底线式输入条。
+    样式在 /css/admin-login.css，颜色跟随 blueprint / paper 双主题。 %>
+<%- include('partials/header', {
+  title: title,
+  noSplash: true,
+  headExtra: '<link rel="stylesheet" href="/css/admin-login.css?v=' + assetV.css + '">'
+}) %>
 
 <div id="adminLoginLoader" class="admin-loader active" aria-hidden="true">
   <div class="admin-loader-inner">
@@ -7,51 +14,134 @@
   </div>
 </div>
 
-<div class="title-block">
-  <h1 class="main-title"><%= config.admin.pageTitle %></h1>
-  <p class="sub-title-en"><%= config.admin.pageTitleEn %></p>
-</div>
+<div class="alog">
+  <div class="alog__tag">● <%= config.admin.navBrand %></div>
+  <div class="alog__tag alog__tag--r">PRIVATE AREA · 内部</div>
+  <span class="alog__foot"><%= config.site.name %> · <%= config.site.tagline %></span>
+  <span class="alog__foot alog__foot--r">● SECURED · 口令认证</span>
 
-<hr class="divider">
+  <%# 四角十字准星 + 屏幕两侧刻度尺（排版打样的对位标记语言） %>
+  <i class="alog__mark alog__mark--tl" aria-hidden="true"></i>
+  <i class="alog__mark alog__mark--tr" aria-hidden="true"></i>
+  <i class="alog__mark alog__mark--bl" aria-hidden="true"></i>
+  <i class="alog__mark alog__mark--br" aria-hidden="true"></i>
+  <i class="alog__ticks alog__ticks--l" aria-hidden="true"></i>
+  <i class="alog__ticks alog__ticks--r" aria-hidden="true"></i>
 
-<div class="spec-block">
-  <p><span class="label">系统</span> <strong><%= config.admin.navBrand %></strong> · 权限级别 <strong>ADMIN</strong></p>
-</div>
+  <%# 面板：卡片边框向上下左右延伸至屏幕边缘（线条主题） %>
+  <section class="alog__panel">
+    <%# 卡片两侧的纵向标注线（图纸的尺寸标注语言） %>
+    <i class="alog__vrules alog__vrules--l" aria-hidden="true"></i>
+    <i class="alog__vrules alog__vrules--r" aria-hidden="true"></i>
 
-<% if (typeof error !== 'undefined') { %>
-<div class="stamp" style="transform: rotate(-1deg); margin: var(--spacing-md) auto;">
-  错误 · ERROR
-</div>
-<div class="description" style="color: var(--accent);">
-  <%= error %>
-</div>
-<% } else { %>
-<div class="stamp" style="transform: rotate(-2deg); margin: var(--spacing-md) auto;">
-  <%= config.blueprint.labels.authenticate %>
-</div>
-<% } %>
+    <i class="alog__rule alog__rule--t" aria-hidden="true"></i>
+    <i class="alog__rule alog__rule--b" aria-hidden="true"></i>
+    <i class="alog__rule alog__rule--l" aria-hidden="true"></i>
+    <i class="alog__rule alog__rule--r" aria-hidden="true"></i>
 
-<div class="description" style="max-width: 400px; margin: var(--spacing-lg) auto;">
-  <p style="margin-bottom: var(--spacing-md);">
-    请输入管理员凭证以访问控制系统。
-  </p>
+    <div class="alog__card">
+      <header class="alog__bar">
+        <span><%= config.admin.navBrand %></span>
+        <span><%= config.admin.pageTitle %></span>
+      </header>
 
-  <form method="POST" action="/admin/login">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <div class="form-group">
-      <label class="form-label">用户名 · Username</label>
-      <input type="text" name="username" class="form-input" required autofocus>
+      <form class="alog__form" method="POST" action="/admin/login">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+        <div class="alog__no">
+          <span>01 · AUTH</span>
+          <span>密码认证</span>
+        </div>
+
+        <h1 class="alog__welcome">欢迎回来</h1>
+        <p class="alog__sub">输入管理员凭证，进入内容控制系统。</p>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+        <p class="alog__error is-shake" role="alert">⚠ ERROR · <%= error %></p>
+        <% } %>
+
+        <div class="alog__labelrow">
+          <label class="alog__label" for="alogUser">用户名</label>
+          <span class="alog__labelen">USERNAME</span>
+        </div>
+        <div class="alog__field">
+          <input id="alogUser" class="alog__input" type="text" name="username"
+                 required autofocus autocomplete="username"
+                 placeholder="输入管理员用户名">
+          <i class="alog__caret" aria-hidden="true"></i>
+        </div>
+
+        <div class="alog__labelrow alog__labelrow--gap">
+          <label class="alog__label" for="alogPass">口令</label>
+          <span class="alog__labelen">PASSWORD</span>
+        </div>
+        <div class="alog__field">
+          <input id="alogPass" class="alog__input" type="password" name="password"
+                 required autocomplete="current-password"
+                 placeholder="输入管理员口令">
+          <button type="button" class="alog__show" id="alogShow"
+                  aria-label="显示或隐藏口令">显示</button>
+          <i class="alog__caret" aria-hidden="true"></i>
+        </div>
+        <p class="alog__caps" id="alogCaps" role="status" hidden>
+          ⚠ CAPS LOCK · 大写锁定已开启
+        </p>
+
+        <button class="alog__submit" type="submit">进入后台 · LOGIN</button>
+
+        <%# 会话信息面板：左会话 · 右系统 —— 纵向分隔线贯穿全屏 %>
+        <div class="alog__session">
+          <div class="alog__sesscol">
+            <span class="alog__sesskey">SESSION · 会话方式</span>
+            <span class="alog__sessval">HttpOnly Cookie 会话</span>
+            <span class="alog__sesskey">权限级别</span>
+            <span class="alog__sessval">ADMIN · 仅限站主</span>
+          </div>
+          <div class="alog__sesscol">
+            <span class="alog__sesskey">SYSTEM · 系统</span>
+            <span class="alog__sessval"><%= config.admin.navBrand %> · <%= config.blueprint.version %></span>
+            <span class="alog__sesskey">凭证存储</span>
+            <span class="alog__sessval">bcrypt 哈希 · 不落明文</span>
+          </div>
+        </div>
+
+        <div class="alog__row">
+          <a href="/">← 返回首页</a>
+          <span><%= config.blueprint.labels.authenticate %></span>
+        </div>
+      </form>
     </div>
-
-    <div class="form-group">
-      <label class="form-label">密码 · Password</label>
-      <input type="password" name="password" class="form-input" required>
-    </div>
-
-    <button type="submit" class="btn" style="width: 100%; justify-content: center;">
-      登录 · LOGIN →
-    </button>
-  </form>
+  </section>
 </div>
+
+<script>
+  (function () {
+    var pass = document.getElementById('alogPass');
+    var show = document.getElementById('alogShow');
+    var caps = document.getElementById('alogCaps');
+
+    /* 显示 / 隐藏口令 */
+    if (show && pass) {
+      show.addEventListener('click', function () {
+        var hidden = pass.type === 'password';
+        pass.type = hidden ? 'text' : 'password';
+        show.textContent = hidden ? '隐藏' : '显示';
+        pass.focus();
+      });
+    }
+
+    /* 大写锁定警告 */
+    function checkCaps(e) {
+      if (caps && typeof e.getModifierState === 'function') {
+        caps.hidden = !e.getModifierState('CapsLock');
+      }
+    }
+    if (pass) {
+      pass.addEventListener('keydown', checkCaps);
+      pass.addEventListener('keyup', checkCaps);
+      pass.addEventListener('blur', function () { if (caps) caps.hidden = true; });
+    }
+  })();
+</script>
 
 <%- include('partials/footer') %>
