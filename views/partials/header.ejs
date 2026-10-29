@@ -1,19 +1,20 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="blueprint">
+<html lang="zh-CN" data-theme="paper">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title %> — <%= config.site.shortName %></title>
   <meta name="csrf-token" content="<%= csrfToken %>">
-  <meta name="theme-color" id="themeColor" content="#0a1929">
+  <meta name="theme-color" id="themeColor" content="#f5f4f1">
   <link rel="stylesheet" href="/css/style.css?v=<%= assetV.css %>">
-  <link rel="stylesheet" href="/vendor/hljs/github-dark.css" id="hljsDark">
-  <link rel="stylesheet" href="/vendor/hljs/github.css" id="hljsLight" disabled>
+  <link rel="stylesheet" href="/vendor/hljs/github-dark.css" id="hljsDark" disabled>
+  <link rel="stylesheet" href="/vendor/hljs/github.css" id="hljsLight">
   <link rel="stylesheet" href="/css/theme-paper.css?v=<%= assetV.themeCss %>">
   <%# Apply the saved theme before first paint so switching never flashes. %>
   <script>
     (function () {
-      var theme = 'blueprint';
+      /* 默认主题：纸墨（paper）。用户手动切换后存 localStorage，优先于默认值。 */
+      var theme = 'paper';
       try {
         var saved = localStorage.getItem('fts-theme');
         if (saved === 'paper' || saved === 'blueprint') theme = saved;
@@ -85,7 +86,7 @@
       <li class="nav-theme">
         <button id="themeToggle" class="theme-toggle" type="button" aria-label="切换主题" title="切换主题">
           <span class="theme-toggle-icon" aria-hidden="true">◐</span>
-          <span class="theme-toggle-text">纸墨</span>
+          <span class="theme-toggle-text">蓝图</span>
         </button>
       </li>
     </ul>
@@ -93,6 +94,6 @@
   <% } else { %>
   <button id="themeToggle" class="theme-toggle theme-toggle--floating" type="button" aria-label="切换主题" title="切换主题">
     <span class="theme-toggle-icon" aria-hidden="true">◐</span>
-    <span class="theme-toggle-text">纸墨</span>
+    <span class="theme-toggle-text">蓝图</span>
   </button>
   <% } %>
