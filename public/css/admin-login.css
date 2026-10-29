@@ -24,6 +24,12 @@ html[data-theme="paper"] {
 body:has(.alog) .n-marker {
   display: none;
 }
+/* 入场编排时延伸线从屏幕外滑入，会短暂撑出 document 的可滚动范围。
+   style.css 只在 body 上挂了 overflow-x:hidden —— iPad Safari 上它拦不住
+   横向拖动，html 层也要挂一道（:has 限定只影响登录页）。 */
+html:has(.alog) {
+  overflow-x: hidden;
+}
 /* 窄屏下主题切换按钮贴得更近，往下让出 PRIVATE AREA 标签的位置 */
 @media (max-width: 1200px) {
   body:has(.alog) .theme-toggle--floating {
@@ -727,6 +733,47 @@ body:not(:has(.admin-loader.active)) .alog__mark {
   .alog * {
     animation-duration: 0.01ms !important;
     animation-delay: 0s !important;
+  }
+}
+
+/* ---- 平板横屏（视口矮）：整卡收一档，保证一屏放下 ------------------------
+   触发条件：非手机宽度 + 视口高度不足（如 iPad 1024×768 横持）。
+   只收纵向节奏，卡片宽度与装饰层不动。 */
+@media (min-width: 561px) and (max-height: 860px) {
+  .alog__bar {
+    padding: 10px 22px;
+  }
+  .alog__form {
+    padding: 22px 32px 18px;
+  }
+  .alog__no {
+    margin-bottom: 18px;
+    padding-bottom: 9px;
+  }
+  .alog__welcome {
+    margin-bottom: 4px;
+    font-size: 24px;
+  }
+  .alog__sub {
+    margin-bottom: 22px;
+  }
+  .alog__labelrow--gap {
+    margin-top: 18px;
+  }
+  .alog__input {
+    padding: 11px 0 10px;
+  }
+  .alog__submit {
+    margin-top: 22px;
+    padding: 12px 0;
+  }
+  .alog__session {
+    margin-top: 18px;
+    padding-top: 12px;
+  }
+  .alog__row {
+    margin-top: 20px;
+    padding-top: 12px;
   }
 }
 
