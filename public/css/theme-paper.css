@@ -34,9 +34,11 @@ html[data-theme="paper"] {
   /* 纸墨系统里唯一的彩色：真正的异常 / 危险操作 */
   --paper-danger: #9c3222;
 
+  /* 默认字体同 blueprint：屏显臻宋打头（@font-face 在 style.css 里声明，
+     两个主题共用），缺字形时回退到下面的西文 / 系统中文字体栈 */
   --font-cn:
-    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei",
-    "PingFang SC", "Hiragino Sans GB", sans-serif;
+    "屏显臻宋-瘦金风格", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", sans-serif;
   --font-mono:
     "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, "Liberation Mono",
     Menlo, monospace;

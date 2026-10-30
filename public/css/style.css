@@ -3,6 +3,17 @@
    Classic Blueprint: Dark Navy + Cyan Grid
    ═══════════════════════════════════════════ */
 
+/* ── 字体：屏显臻宋（瘦金风格，OFL 开源）──────────────────────────────────
+   字体文件来自 xiaji-home 项目的 font/ 目录，放在 public/fonts/ 下随项目走。
+   声明成 @font-face 后放在 --font-cn 栈的最前面：整站正文 / 标题默认用它
+   渲染，缺字形（比如它不覆盖的西文）时自动回退到后面的系统字体栈，
+   不会出现「豆腐块」。等宽字体（代码 / 小标签）保持 mono 栈不变。 */
+@font-face {
+  font-family: "屏显臻宋-瘦金风格";
+  src: url("/fonts/屏显臻宋-瘦金风格.ttf") format("truetype");
+  font-display: swap;
+}
+
 /* ── CSS Variables ── */
 :root {
   /* 主题：blueprint（默认）与 paper。
@@ -28,7 +39,7 @@
   --on-accent: #ffffff;
   --overlay: rgba(4, 12, 22, 0.93);
   --grid-line: rgba(100, 200, 255, 0.06);
-  --font-cn: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  --font-cn: "屏显臻宋-瘦金风格", "PingFang SC", "Noto Sans SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", "Consolas", "Monaco", monospace;
   --spacing-xs: 0.5rem;
   --spacing-sm: 1rem;
